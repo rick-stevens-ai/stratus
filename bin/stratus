@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+#
+# stratus — CLI front-end for the STRATUS hierarchical agent-memory store.
+#
+# Commands:
+#   stratus serve            Start the HTTP gateway (uses built dist/ if present,
+#                            else falls back to tsx on the TypeScript source).
+#   stratus smoke            Run the offline smoke test.
+#   stratus build            Compile TypeScript -> dist/.
+#   stratus health [PORT]    Curl the gateway /healthz endpoint.
+#   stratus version          Print the package version.
+#   stratus help             This help.
+#
+# Environment:
+#   STRATUS_PORT             Gateway port (default 8077).
+#   STRATUS_DB               SQLite path (default ./stratus.db; ":memory:" for ephemeral).
+#   STRATUS_EMBED_BASE_URL   OpenAI-compatible /v1/embeddings base URL.
+#   STRATUS_EMBED_API_KEY    API key for the embedder (if required).
+#   STRATUS_EMBED_MODEL      Embedding model id (default nomic-embed-text).
+#
+set -euo pipefail
+
+ROOT=""
+# Resolve this script's real location even when invoked via a symlink.
+SELF="${BASH_SOURCE[0]}"
+while [ -h "$SELF" ]; do
+  DIR="$(cd -P "$(dirname "$SELF")" && pwd)"
+  SELF="$(readlink "$SELF")"
+  case "$SELF" in /*) ;; *) SELF="$DIR/$SELF" ;; esac
+done
+ROOT="$(cd -P "$(dirname "$SELF")/.." && pwd)"
+cd "$ROOT"
+
+PORT="${STRATUS_PORT:-8077}"
+
+usage() { sed -n '3,24p' "$0" | sed 's/^# \{0,1\}//'; }
+
+run_node_or_tsx() {
+  # $1 = dist target (relative), $2 = src target (relative)
+  local dist="$1" src="$2"
+  if [ -f "$dist" ]; then
+    exec node "$dist"
+  elif command -v npx >/dev/null 2>&1; then
+    exec npx --yes tsx "$src"
+  else
+    echo "stratus: no build found at $dist and tsx unavailable. Run: stratus build" >&2
+    exit 1
+  fi
+}
+
+cmd="${1:-help}"; shift || true
+case "$cmd" in
+  serve|gateway)
+    echo "stratus: starting gateway on :$PORT (Ctrl-C to stop)"
+    run_node_or_tsx "dist/gateway.js" "src/gateway.ts"
+    ;;
+  smoke)
+    exec npm run --silent smoke
+    ;;
+  build)
+    exec npm run --silent build
+    ;;
+  health)
+    p="${1:-$PORT}"
+    curl -fsS "http://localhost:${p}/healthz" && echo
+    ;;
+  version|--version|-v)
+    node -p "require('$ROOT/package.json').version"
+    ;;
+  help|--help|-h|"")
+    usage
+    ;;
+  *)
+    echo "stratus: unknown command '$cmd' (try: stratus help)" >&2
+    exit 1
+    ;;
+esac
