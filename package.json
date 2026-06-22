@@ -1,19 +1,29 @@
 {
   "name": "stratus-memory",
   "version": "0.1.0",
-  "description": "Clustered hierarchical memory for scientific agents — a four-tier (stream / atoms / scenes / core) memory store with hybrid dense + lexical recall, built entirely on open components.",
+  "description": "Clustered hierarchical memory for scientific agents \u2014 a four-tier (stream / atoms / scenes / core) memory store with hybrid dense + lexical recall, built entirely on open components.",
   "license": "Apache-2.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "bin": {
     "stratus": "bin/stratus",
     "stratus-gateway": "dist/gateway.js"
   },
-  "files": ["dist", "bin", "install.sh", "README.md", "LICENSE", "docs"],
+  "files": [
+    "dist",
+    "bin",
+    "install.sh",
+    "README.md",
+    "LICENSE",
+    "docs"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "smoke": "tsx test/smoke.ts",
@@ -22,16 +32,26 @@
     "install:stratus": "bash install.sh"
   },
   "keywords": [
-    "memory", "agent", "agentic", "rag", "vector-search", "sqlite",
-    "sqlite-vec", "fts5", "hierarchical-memory", "scientific-agents"
+    "memory",
+    "agent",
+    "agentic",
+    "rag",
+    "vector-search",
+    "sqlite",
+    "sqlite-vec",
+    "fts5",
+    "hierarchical-memory",
+    "scientific-agents"
   ],
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
+    "better-sqlite3": "^12.11.1",
     "sqlite-vec": "^0.1.7-alpha.2"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.12",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
