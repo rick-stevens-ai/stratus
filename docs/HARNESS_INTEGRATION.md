@@ -220,7 +220,129 @@ semantics + isolation guarantees in `docs/POOLS.md`.
 
 ---
 
-## 4. Checklist for a new harness
+## 4. Broker deploy (NATS + JetStream, runs on Kukla's host)
+
+The message bus described in §1 and §2c assumes a running NATS broker. Templates
+live in `deploy/nats/`.
+
+### `deploy/nats/nats-server.conf.template`
+
+Key points:
+
+- Tailscale-bound listener (`REPLACE_ME_TAILSCALE_IP:4222`); monitoring on
+  `127.0.0.1:8222` only.
+- JetStream enabled with file store; paths under `REPLACE_ME_HOME/.hermes/nats/`.
+- Three users: `admin` (full `>`), `kukla`, `ollie` (scoped to `sibline.>`).
+
+> **$JS.> grant gotcha**: Each agent user MUST have `publish: $JS.>` in addition
+> to `sibline.>`. Without it, JetStream consumer/ack operations fail with
+> "permission denied" even when `sibline.>` pub/sub works. The failure message
+> points at subscribe but the missing grant is on the ack publish path. This bites
+> every new deployment once.
+
+See `deploy/nats/nats-server.conf.template` for the full tokenized config.
+
+### `deploy/nats/create-streams.sh`
+
+Creates the three sibline streams (`sibline-kukla`, `sibline-ollie`,
+`sibline-broadcast`). File storage, 7d retention, 10k msgs, 1MB max. Idempotent
+on re-run (check with `nats stream info <name>` before re-running; `stream add`
+errors if the stream already exists).
+
+### SIGHUP / reconnect procedure
+
+ACL/permission changes reload cleanly with `kill -HUP <nats-server-pid>` — no
+broker restart needed. **However**, py-nats durable subscribers do NOT survive
+the underlying TCP reconnect: they enter a "consumer exists, no active interest"
+zombie where messages queue but never deliver. Standard procedure for ANY
+broker ACL/config change:
+
+1. `kill -HUP <nats-server-pid>` — reload config.
+2. `launchctl kickstart -k gui/$(id -u)/<subscriber-label>` — bounce every
+   subscriber process.
+
+---
+
+## 5. Hermes-side launchd templates
+
+Four `.plist.template` files live in `deploy/launchd/`. Tokens: `REPLACE_ME_HOME`,
+`REPLACE_ME_TAILSCALE_IP`, `REPLACE_ME_NODE` (absolute node path — must match the
+one used for `npm install`/`npm rebuild better-sqlite3`),
+`REPLACE_ME_STRATUS_CHECKOUT`, `REPLACE_ME_NODE_BINDIR`.
+
+| Template | Label | Interpreter | Notes |
+|---|---|---|---|
+| `com.stevens.nats-broker.plist.template` | `com.stevens.nats-broker` | `/opt/homebrew/bin/nats-server` | Broker itself; Kukla's host |
+| `com.stevens.nats-subscriber.plist.template` | `com.stevens.nats-subscriber` | sibline venv Python 3.13 | Needs `nats-py`; 3.11+ isoformat native |
+| `com.stevens.stratus-gateway.plist.template` | `com.stevens.stratus-gateway` | Pinned `node` (same as `npm rebuild`) | ABI must match — see `REPLACE_ME_NODE` |
+| `com.stevens.stratus-tap.plist.template` | `com.stevens.stratus-tap` | `/usr/bin/python3` (system) | stdlib only, no deps |
+
+> **Why three interpreters?** Deliberately different: the broker is a Go binary;
+the subscriber runs the sibline venv (needs `nats-py`, pinned to Python 3.13+);
+the tap uses system Python (stdlib only, no deps, maximum portability); the
+gateway runs pinned Node (native ABI dependency via `better-sqlite3`). Do not
+"unify" them — each interpreter choice carries a real constraint.
+
+---
+
+## 6. Hermes-side bootstrap order
+
+```
+1. Broker host (Kukla's m1):
+   brew install nats-server nats   # server + CLI
+   mkdir -p ~/.hermes/nats/jetstream ~/.hermes/logs
+   cp deploy/nats/nats-server.conf.template ~/.hermes/nats/nats-server.conf
+   # fill REPLACE_ME_* (tailnet IP, passwords)
+   cp deploy/launchd/com.stevens.nats-broker.plist.template \
+      ~/Library/LaunchAgents/com.stevens.nats-broker.plist  # fill tokens
+   launchctl load ~/Library/LaunchAgents/com.stevens.nats-broker.plist
+   # create a `nats context` with url+creds, then:
+   bash deploy/nats/create-streams.sh
+   nats --context sibline stream ls      # verify 3 streams
+
+2. STRATUS gateway (any host; typically same as broker):
+   git clone <repo> ~/code/stratus && cd ~/code/stratus
+   nvm use 24                            # pin the node you'll run under
+   npm ci
+   npm rebuild better-sqlite3           # SAME node as runtime (ABI must match)
+   mkdir -p ~/.stratus/blobs
+   cp deploy/launchd/com.stevens.stratus-gateway.plist.template \
+      ~/Library/LaunchAgents/com.stevens.stratus-gateway.plist
+   # set REPLACE_ME_NODE = $(which node) under the pinned nvm version
+   launchctl load ~/Library/LaunchAgents/com.stevens.stratus-gateway.plist
+   curl -s localhost:8077/healthz       # {"ok":true,...}
+
+3. Sibline subscriber (Hermes side):
+   python3.13 -m venv ~/.hermes/venvs/sibline
+   ~/.hermes/venvs/sibline/bin/pip install nats-py
+   # creds: echo 'SIBLING_NATS_PASS=...' > ~/.config/sibling-nats/cred (chmod 0600)
+   cp deploy/launchd/com.stevens.nats-subscriber.plist.template \
+      ~/Library/LaunchAgents/com.stevens.nats-subscriber.plist  # fill tokens
+   launchctl load ~/Library/LaunchAgents/com.stevens.nats-subscriber.plist
+
+4. STRATUS tap (shadow capture):
+   # set SOURCE_CONV_DIR (memory provider L0 JSONL dir) + STRATUS_TENANT in plist
+   cp deploy/launchd/com.stevens.stratus-tap.plist.template \
+      ~/Library/LaunchAgents/com.stevens.stratus-tap.plist  # fill tokens
+   launchctl load ~/Library/LaunchAgents/com.stevens.stratus-tap.plist
+
+5. Verify end-to-end:
+   - Publish a test envelope to sibline.<peer>.inbox; confirm peer receives.
+   - tail ~/.stratus/tap.log; confirm new turns flow to /stream/add.
+   - curl 'localhost:8077/stream/search?q=test&tenant=<tenant>'; confirm capture.
+```
+
+### Secrets layout
+
+| Secret | Location | Mode | Notes |
+|---|---|---|---|
+| NATS agent password | `~/.config/sibling-nats/cred` (`SIBLING_NATS_PASS=`) | 0600 | Canonical. `/tmp/.nats_creds` is a stale fallback, may not exist. |
+| Webhook HMAC secret | `~/.hermes/webhook_subscriptions.json` | 0600 | Hermes auto-redacts in echo; JSON parser sees raw value. |
+| Argo API key (remote embed/distill) | env / keychain | — | Only if `STRATUS_EMBED=remote`. |
+
+---
+
+## 7. Checklist for a new harness
 
 1. Choose a stable `tenant` id for the agent.
 2. Stand up (or reuse) a STRATUS gateway; confirm `/healthz`.
@@ -229,3 +351,52 @@ semantics + isolation guarantees in `docs/POOLS.md`.
 5. If coordinating via the message bus, run a subscriber on a modern Python and
    make the send path symmetric (file + broker).
 6. Keep the gateway off the public internet (no built-in auth).
+
+---
+
+## 5. Install / bootstrap order (replication-grade)
+
+The broker leg lives on the Hermes host (m1); see `KUKLA_DELTA.md` +
+`deploy/nats/` for the `nats-server.conf` 3-user ACL (note the
+`publish: $JS.>` JetStream grant gotcha) and stream-create commands. Once the
+broker + streams exist, bring up the OpenClaw side in this order:
+
+```
+1.  git checkout + cd stratus
+2.  npm install            # use the pinned Node (see package.json engines)
+3.  npm rebuild better-sqlite3   # ABI must match the pinned Node; pin the
+                                 # absolute node path in any launchd plist env
+4.  mkdir -p ~/.openclaw/stratus-dualrun ~/.openclaw/logs ~/.stratus
+5.  (Hermes host) start nats-server + create streams (KUKLA_DELTA.md)
+6.  (Hermes host) create durable consumers: sibline-ollie/ollie-inbox-durable,
+    sibline-broadcast/ollie-bcast-durable
+7.  start STRATUS gateway:  launchctl bootstrap + kickstart
+    com.example.stratus-gateway  ->  verify  curl -s localhost:8077/healthz
+8.  start the shadow tap:   com.example.stratus-tap-openclaw
+                           ->  confirm /stream/add receiving tenant=openclaw
+9.  start the subscriber:   com.example.nats-subscriber
+                           ->  log shows js-subscribed filter=sibline.ollie.inbox
+10. verify end-to-end: publish a kind=ping to sibline.ollie.inbox; expect a
+    pong on sibline.<peer>.inbox + an `inbox appended` line in the subscriber log
+```
+
+Plist templates with `REPLACE_ME_*` tokens are in `deploy/launchd/`
+(`com.example.stratus-gateway`, `com.example.stratus-tap-openclaw`,
+`com.example.nats-subscriber`). Replace `REPLACE_ME_HOME` /
+`REPLACE_ME_PYTHON` / `REPLACE_ME_STRATUS_URL` before installing.
+
+---
+
+## 6. Secrets layout (OpenClaw side)
+
+Nothing in this stack reads secrets from source. Concrete locations:
+
+| Secret | Storage | Notes |
+|---|---|---|
+| Cross-agent webhook HMAC secret | file: `~/.openclaw/agent-secrets/kukla-webhook.env` (mode `0600`) | Sourced by `kukla_webhook_post.sh` as a fallback **before** the keychain lookup. Required because a login keychain is **locked in non-GUI SSH sessions**, so `security find-generic-password` returns empty there. File-first avoids that trap. |
+| NATS broker user/password | env file on each host, mode `0600` | Never inline in the plist; pass via `EnvironmentVariables` or a sourced env file. Broker ACL config is on the Hermes host (`deploy/nats/`). |
+| STRATUS gateway | none | No built-in auth — bind to loopback only and keep off the public internet. |
+
+Keychain-vs-file rule of thumb: anything a launchd/SSH/cron context must read
+unattended goes in a `0600` env file (keychain is unreliable headless);
+interactive-only secrets may stay in the keychain.

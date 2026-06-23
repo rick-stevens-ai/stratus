@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- OpenClaw-side STRATUS gateway (shadow/live memory HTTP surface, :8077).
+     Replace REPLACE_ME_HOME with the absolute home dir (e.g. /Users/youruser).
+     Install: cp to ~/Library/LaunchAgents/, then
+       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.stratus-gateway.plist
+       launchctl kickstart -k gui/$(id -u)/com.example.stratus-gateway -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.example.stratus-gateway</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>REPLACE_ME_HOME/.openclaw/stratus-dualrun/run-gateway.sh</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>10</integer>
+  <key>StandardOutPath</key><string>REPLACE_ME_HOME/.openclaw/stratus-dualrun/gateway.out.log</string>
+  <key>StandardErrorPath</key><string>REPLACE_ME_HOME/.openclaw/stratus-dualrun/gateway.err.log</string>
+</dict>
+</plist>

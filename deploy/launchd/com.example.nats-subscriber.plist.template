@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- OpenClaw-side Sibline inbound subscriber. Consumes sibline.<self>.inbox +
+     sibline.broadcast from JetStream (durable consumer) and bridges non-noise
+     traffic into the file mailbox; auto-pongs kind=ping.
+     Replace:
+       REPLACE_ME_HOME           absolute home dir (e.g. /Users/youruser)
+       REPLACE_ME_PYTHON         absolute path to a Python 3.11+ with nats-py
+                                 (e.g. REPLACE_ME_HOME/.hermes/venvs/sibline/bin/python3.13)
+     Install:
+       cp to ~/Library/LaunchAgents/
+       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.nats-subscriber.plist
+       launchctl kickstart -k gui/$(id -u)/com.example.nats-subscriber -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.nats-subscriber</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>REPLACE_ME_PYTHON</string>
+        <string>REPLACE_ME_HOME/.openclaw/workspace/scripts/nats-subscriber.py</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>REPLACE_ME_HOME</string>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>REPLACE_ME_HOME/.openclaw/logs/nats-subscriber-stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>REPLACE_ME_HOME/.openclaw/logs/nats-subscriber-stderr.log</string>
+
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+</dict>
+</plist>
