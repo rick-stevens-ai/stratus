@@ -69,6 +69,10 @@ curl localhost:8077/healthz
 
 See [`docs/API.md`](docs/API.md) for the full route table.
 
+To connect an agent runtime (Hermes, OpenClaw, or your own) to STRATUS — shadow
+or live, single-tenant or shared-pool — see
+[`docs/HARNESS_INTEGRATION.md`](docs/HARNESS_INTEGRATION.md).
+
 ### Distillation (T0 → T1 → T2 → T3)
 
 The gateway provides the storage primitives; promotion between tiers is driven
