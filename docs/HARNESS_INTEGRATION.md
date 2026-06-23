@@ -165,8 +165,9 @@ mode by default; flip `memory.provider: stratus` in config to go live.
 ### 2c. Cross-agent messaging
 
 - **Subscriber**: `~/.hermes/nats-subscriber.py` (shared script, one
-  instance per agent identity). Consumes `stratus.openclaw.inbox` +
-  `stratus.broadcast` from the JetStream durable and bridges non-noise
+  instance per agent identity). On the OpenClaw side it consumes
+  `sibline.ollie.inbox` + `sibline.broadcast` from the JetStream durable
+  (durable consumer `ollie-inbox-durable`) and bridges non-noise
   traffic into the file mailbox:
   `~/Dropbox/XFER/kukla-ollie/kukla-background-queue.jsonl`.
   The OpenClaw Gateway background-hook process polls that JSONL for
@@ -183,9 +184,17 @@ mode by default; flip `memory.provider: stratus` in config to go live.
   1. **Durable file leg first**: `sibline-send.py` appends the message
      envelope to
      `~/Dropbox/XFER/kukla-ollie/kukla-background-queue.jsonl` atomically.
-  2. **Broker leg**: publishes to `stratus.hermes.inbox` on NATS
-     best-effort. Broker outage degrades to file-only delivery; no message
-     loss.
+  2. **Broker leg**: publishes to the peer's inbox on NATS best-effort
+     (OpenClaw→Kukla = `sibline.kukla.inbox`; Kukla→OpenClaw =
+     `sibline.ollie.inbox`), plus an audit copy to the sender's own
+     `sibline.<self>.outbox`. Broker outage degrades to file-only delivery;
+     no message loss.
+
+  Live subject tree (verified against the broker at `nats://<m1>:4222`):
+  streams `sibline-ollie` (`sibline.ollie.>`), `sibline-kukla`
+  (`sibline.kukla.>`), `sibline-broadcast` (`sibline.broadcast`). Agent
+  identities in subjects are `ollie` / `kukla`. (Legacy `sibling-*` streams
+  are pending retirement; there is no `stratus.*` subject tree.)
   Outbound from OpenClaw also has a signed-webhook path
   (`kukla_webhook_post.sh`, HMAC-SHA256) for out-of-band delivery when the
   shared Dropbox dir is the authoritative channel (e.g. this integration).
