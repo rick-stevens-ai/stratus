@@ -69,6 +69,38 @@ curl localhost:8077/healthz
 
 See [`docs/API.md`](docs/API.md) for the full route table.
 
+### Distillation (T0 → T1 → T2 → T3)
+
+The gateway provides the storage primitives; promotion between tiers is driven
+by a standalone sidecar, [`stratus_distiller.py`](stratus_distiller.py). It
+polls the Stream over the HTTP API and uses any OpenAI-compatible chat model to:
+
+- **T0 → T1**: extract typed atoms (`persona` / `episodic` / `instruction`)
+  from new turns, in small windows (defaults to 12-turn chunks — large blobs
+  cause under-extraction).
+- **T1 → T2**: synthesize periodic scene summaries (`L2_INTERVAL_S`, default 1h).
+- **T2 → T3**: synthesize a stable core/persona (`L3_INTERVAL_S`, default 6h).
+
+It touches only the documented HTTP API plus your LLM endpoint, and keeps a
+restart-safe checkpoint in `~/.stratus/distiller_state.json`.
+
+```bash
+export LLM_BASE_URL=http://localhost:8000/v1   # any OpenAI-compatible chat endpoint
+export LLM_API_KEY=...                          # required, no default
+export DISTILLER_MODEL=gpt-4o-mini
+python3 stratus_distiller.py --once             # one backfill pass
+python3 stratus_distiller.py                    # continuous loop
+```
+
+| Env var          | Default            | Notes                              |
+|------------------|--------------------|------------------------------------|
+| `LLM_BASE_URL`   | `localhost:8000/v1`| chat-completions endpoint          |
+| `LLM_API_KEY`    | _(required)_       | bearer token for the chat endpoint |
+| `DISTILLER_MODEL`| `gpt-4o-mini`      | extraction/synthesis model id      |
+| `L1_EVERY_N`     | `10`               | new turns before an atom pass      |
+| `L2_INTERVAL_S`  | `3600`             | scene synthesis cadence            |
+| `L3_INTERVAL_S`  | `21600`            | core synthesis cadence             |
+
 ---
 
 ## Configuration
