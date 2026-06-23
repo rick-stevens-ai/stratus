@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-STRATUS dual-run shadow tap (m1).
+STRATUS dual-run shadow tap.
 
-Tails TDAI's L0 conversation JSONL shards and mirrors each new turn to the
-STRATUS gateway (/stream/add). TDAI remains 100% authoritative and untouched —
-this only READS TDAI's output files and forwards to STRATUS so the two systems
-accumulate the SAME conversation traffic in parallel for the week-long dual run.
+Tails an external memory source's L0 conversation JSONL shards and mirrors each
+new turn to the STRATUS gateway (/stream/add). The external source remains 100%
+authoritative and untouched — this only READS its output files and forwards to
+STRATUS so the two systems accumulate the SAME conversation traffic in parallel
+for the dual-run validation window.
 
 Design:
   - Per-file byte-offset checkpoint in ~/.stratus/tap_state.json -> survives restarts,
@@ -16,7 +17,7 @@ Design:
 """
 import json, os, time, urllib.request, urllib.error, glob, sys
 
-CONV_DIR = os.environ.get("TDAI_CONV_DIR", os.path.expanduser("~/.memory-tencentdb/memory-tdai/conversations"))
+CONV_DIR = os.environ.get("SOURCE_CONV_DIR", os.path.expanduser("~/.external-memory/conversations"))
 STRATUS  = os.environ.get("STRATUS_URL", "http://localhost:8077")
 STATE    = os.path.expanduser("~/.stratus/tap_state.json")
 LOG      = os.path.expanduser("~/.stratus/tap.log")
@@ -88,7 +89,7 @@ def process_file(path, st):
     # forward each session batch
     for sk, msgs in batches.items():
         try:
-            status, _ = post("/stream/add", {"session_id": f"tdai:{sk}", "messages": msgs})
+            status, _ = post("/stream/add", {"session_id": f"ext:{sk}", "messages": msgs})
             if status == 200:
                 sent += len(msgs)
             else:

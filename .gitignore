@@ -8,3 +8,4 @@ example-blobs/
 example.db*
 *.log
 .DS_Store
+__pycache__/

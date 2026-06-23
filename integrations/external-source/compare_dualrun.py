@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""STRATUS vs TDAI dual-run weekly comparison (m1).
+"""STRATUS vs external-source dual-run comparison.
 Pulls turn/atom counts from both stores + runs identical recall queries against
 each, prints a parity report. Read-only on both. Safe to run anytime."""
 import json, sqlite3, urllib.request, os, glob
 
-TDAI_DB = os.path.expanduser("~/.memory-tencentdb/memory-tdai/instances/kukla/vectors.db")
-TDAI_MAIN = os.path.expanduser("~/.memory-tencentdb/memory-tdai/vectors.db")
-STRATUS = "http://localhost:8077"
+SOURCE_DB   = os.path.expanduser(os.environ.get("SOURCE_DB", "~/.external-memory/vectors.db"))
+SOURCE_INST = os.path.expanduser(os.environ.get("SOURCE_DB_INSTANCE", "~/.external-memory/instances/main/vectors.db"))
+STRATUS = os.environ.get("STRATUS_URL", "http://localhost:8077")
 
 def q1(db, sql):
     try:
@@ -26,12 +26,12 @@ def post(route, body):
         return {"error": str(e)}
 
 print("="*60)
-print("STRATUS vs TDAI dual-run parity report (m1)")
+print("STRATUS vs external-source dual-run parity report")
 print("="*60)
 
-# TDAI counts (try main store; instance store)
-db = TDAI_MAIN if os.path.exists(TDAI_MAIN) else TDAI_DB
-print(f"\nTDAI store: {db}")
+# External-source counts (try main store; instance store)
+db = SOURCE_DB if os.path.exists(SOURCE_DB) else SOURCE_INST
+print(f"\nExternal source store: {db}")
 print(f"  L0 conversations : {q1(db,'select count(*) from l0_conversations')}")
 print(f"  L1 records       : {q1(db,'select count(*) from l1_records')}")
 
@@ -39,7 +39,6 @@ print(f"  L1 records       : {q1(db,'select count(*) from l1_records')}")
 st_stream = post("/stream/search", {"query":"the and a of","limit":5000})
 st_atoms  = post("/atoms/query", {"limit":5000})
 print(f"\nSTRATUS store ({STRATUS}):")
-print(f"  health           : {post('/healthz',{}) if False else 'see /healthz'}")
 sc = len(st_stream.get("messages",[])) if isinstance(st_stream,dict) and "messages" in st_stream else st_stream
 ac = len(st_atoms.get("items",[])) if isinstance(st_atoms,dict) and "items" in st_atoms else st_atoms
 print(f"  T0 stream (>=)   : {sc}")
@@ -47,13 +46,13 @@ print(f"  T1 atoms  (>=)   : {ac}")
 
 # identical recall spot-checks
 print("\nRecall spot-checks (STRATUS hybrid):")
-for query in ["what does Rick prefer for scoring",
+for query in ["scoring preference",
               "STRATUS dual run",
-              "OSTI corpus total"]:
+              "corpus total count"]:
     r = post("/atoms/search", {"query":query,"limit":2})
     items = r.get("items",[]) if isinstance(r,dict) else []
     print(f"  q='{query}': {len(items)} hit(s)")
     for it in items[:1]:
         print(f"      -> {it.get('content','')[:90]}")
 
-print("\n(TDAI remains authoritative; STRATUS is shadow-only this week.)")
+print("\n(External source remains authoritative; STRATUS is shadow-only this window.)")
