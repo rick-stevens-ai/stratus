@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.stevens.nats-subscriber</string>
+  <key>ProgramArguments</key><array>
+    <!-- py3.13 venv: parses N-digit-microsecond isoformat natively, no shim -->
+    <string>REPLACE_ME_HOME/.hermes/venvs/sibline/bin/python</string>
+    <string>REPLACE_ME_HOME/.hermes/scripts/nats_subscriber.py</string>
+  </array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>StandardOutPath</key><string>REPLACE_ME_HOME/.hermes/logs/nats-subscriber-launchd.log</string>
+  <key>StandardErrorPath</key><string>REPLACE_ME_HOME/.hermes/logs/nats-subscriber-launchd.err</string>
+  <key>WorkingDirectory</key><string>REPLACE_ME_HOME/.hermes</string>
+</dict></plist>

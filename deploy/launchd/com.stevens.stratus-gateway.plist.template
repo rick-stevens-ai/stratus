@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.stevens.stratus-gateway</string>
+  <key>ProgramArguments</key><array>
+    <!-- REPLACE_ME_NODE MUST be the SAME node that ran `npm install`/`npm rebuild
+         better-sqlite3` (native ABI). Mismatch => ERR_DLOPEN_FAILED. -->
+    <string>REPLACE_ME_NODE</string>
+    <string>REPLACE_ME_STRATUS_CHECKOUT/node_modules/.bin/tsx</string>
+    <string>REPLACE_ME_STRATUS_CHECKOUT/src/gateway.ts</string>
+  </array>
+  <key>WorkingDirectory</key><string>REPLACE_ME_STRATUS_CHECKOUT</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>REPLACE_ME_NODE_BINDIR:/usr/bin:/bin</string>
+    <key>STRATUS_DB</key><string>REPLACE_ME_HOME/.stratus/stratus.db</string>
+    <key>STRATUS_BLOBS</key><string>REPLACE_ME_HOME/.stratus/blobs</string>
+    <key>STRATUS_EMBED</key><string>local</string>
+    <!-- STRATUS_EMBED: 'local' for embedded model, 'remote' for API; see INSTALL -->
+    <key>STRATUS_PORT</key><string>8077</string>
+  </dict>
+  <key>StandardOutPath</key><string>REPLACE_ME_HOME/.stratus/gateway.log</string>
+  <key>StandardErrorPath</key><string>REPLACE_ME_HOME/.stratus/gateway.log</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+</dict></plist>

@@ -1,0 +1,35 @@
+# Sibline broker — Tailscale-bound, JetStream-enabled, 3 users.
+listen: "REPLACE_ME_TAILSCALE_IP:4222"   # broker host's tailnet IP
+http:   "127.0.0.1:8222"                  # monitoring, localhost only
+server_name: "sibline-broker"
+
+jetstream {
+  store_dir: "REPLACE_ME_HOME/.hermes/nats/jetstream"
+  max_memory_store: 256MB
+  max_file_store: 2GB
+}
+
+authorization {
+  users = [
+    { user: admin
+      password: "REPLACE_ME_ADMIN_PW"
+      permissions: { publish: ">", subscribe: ">" } }
+    { user: kukla
+      password: "REPLACE_ME_AGENT_PW"
+      # $JS.> is LOAD-BEARING: without it, JetStream consumer/ack ops fail
+      # with "permission denied" even though sibline.> pub/sub works.
+      permissions: {
+        publish:   { allow: ["sibline.>", "_INBOX.>", "$JS.>"] }
+        subscribe: { allow: ["sibline.>", "_INBOX.>"] } } }
+    { user: ollie
+      password: "REPLACE_ME_AGENT_PW"
+      permissions: {
+        publish:   { allow: ["sibline.>", "_INBOX.>", "$JS.>"] }
+        subscribe: { allow: ["sibline.>", "_INBOX.>"] } } }
+  ]
+}
+
+log_file: "REPLACE_ME_HOME/.hermes/logs/nats.log"
+logtime: true
+debug: false
+trace: false
