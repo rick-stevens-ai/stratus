@@ -8,3 +8,5 @@ export type {
 } from "./stratus.js";
 export { makeEmbedder, makeLocalEmbedder } from "./embedder.js";
 export type { EmbedderConfig } from "./embedder.js";
+export { PoolManager, PoolError } from "./pools.js";
+export type { Access, PoolDecl } from "./pools.js";

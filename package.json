@@ -27,6 +27,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "smoke": "tsx test/smoke.ts",
+    "test:pools": "tsx test/pools.test.ts",
     "gateway": "tsx src/gateway.ts",
     "example": "tsx examples/basic.ts",
     "install:stratus": "bash install.sh"
