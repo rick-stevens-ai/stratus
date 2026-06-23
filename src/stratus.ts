@@ -44,6 +44,24 @@ export interface SceneEntry { path: string; created_at: string; updated_at: stri
 
 const RRF_K = 60;
 
+/**
+ * Sanitize an arbitrary user string into a safe FTS5 MATCH expression.
+ * Raw input passed straight to MATCH throws on bare operators/punctuation
+ * (AND, OR, NOT, *, -, ", (, ...), surfacing as a 500. We tokenize on
+ * non-word chars and wrap each token as a quoted FTS5 string literal so the
+ * whole query is treated as literal terms (implicit AND). Empty input yields
+ * a query that matches nothing rather than erroring.
+ */
+function toFtsQuery(raw: string): string {
+  const tokens = (raw || "")
+    .split(/[^0-9A-Za-z\u00C0-\u024F\u0400-\u04FF\u4E00-\u9FFF]+/)
+    .filter((t) => t.length > 0)
+    .map((t) => `"${t.replace(/"/g, '""')}"`);
+  // Empty input -> a quoted literal that is valid FTS5 syntax but won't match
+  // real tokens, yielding zero rows instead of a parse error.
+  return tokens.length ? tokens.join(" ") : '"__stratus_no_match__"';
+}
+
 export class Stratus {
   private db: Database.Database;
   private embed: Embedder;
@@ -227,7 +245,7 @@ export class Stratus {
     ).all(qvec as any, limit * 2) as Array<{ id: string }>;
     const ftsRows = this.db.prepare(
       `SELECT id, bm25(${kind}_fts) AS rank FROM ${kind}_fts WHERE ${kind}_fts MATCH ? ORDER BY rank LIMIT ?`
-    ).all(query, limit * 2) as Array<{ id: string }>;
+    ).all(toFtsQuery(query), limit * 2) as Array<{ id: string }>;
     const score = new Map<string, number>();
     vecRows.forEach((r, i) => score.set(r.id, (score.get(r.id) ?? 0) + 1 / (RRF_K + i)));
     ftsRows.forEach((r, i) => score.set(r.id, (score.get(r.id) ?? 0) + 1 / (RRF_K + i)));
