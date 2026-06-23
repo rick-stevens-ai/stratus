@@ -5,7 +5,7 @@
  *   Every data route accepts optional {tenant, pool} addressing.
  *     tenant : agent identity. Defaults to STRATUS_DEFAULT_TENANT (or "default").
  *     pool   : "self" (private, default) or a declared shared-pool name.
- *   With neither field set, behavior is single-tenant TDAI parity against the
+ *   With neither field set, behavior is single-tenant single-store parity against the
  *   default tenant's private store.
  *
  * Data routes (all POST, JSON in/out) — each also accepts {tenant?, pool?}:

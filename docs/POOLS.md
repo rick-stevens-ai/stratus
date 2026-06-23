@@ -10,7 +10,7 @@ Until now STRATUS was single-tenant: one DB, one blob dir, no tenant axis. Two
 needs:
 
 1. **Tenant routing** — many agents share one gateway, each with a *private*
-   store, zero bleed. This is the default and matches TDAI behavior exactly.
+   store, zero bleed. This is the default and matches single-store behavior exactly.
 2. **Shared pools** — an *opt-in* way for named groups of agents to read/write a
    shared slice of memory at any tier, with careful, enforced access — without
    ever making sharing the default.
@@ -24,7 +24,7 @@ Every data operation is addressed by a **(tenant, pool)** pair.
 | `tenant` | agent identity (`kukla`, `ollie`, …)      | `STRATUS_DEFAULT_TENANT` (`default`) |
 | `pool`   | namespace within reach                    | `self` (private)   |
 
-- **No `pool`** → the tenant's own private store (`self`). Pure TDAI parity.
+- **No `pool`** → the tenant's own private store (`self`). Pure single-store parity.
 - **`pool: "<name>"`** → a declared shared pool the tenant is a member of.
 - `self` is **reserved** — it is the private pool and cannot be declared.
 

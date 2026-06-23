@@ -9,7 +9,7 @@
  *              shared pool ("lucid", "osti", ...).
  *
  *   Sharing is NOT the default. With no pool specified, every agent reaches
- *   only its own private store (pool="self") — exact TDAI parity.
+ *   only its own private store (pool="self") — exact single-store parity.
  *
  *   A shared pool exists only after it is DECLARED, with an explicit member
  *   roster and per-member access mode. Touching an undeclared pool is an error,
