@@ -1,5 +1,5 @@
 /**
- * STRATUS pool test — proves multi-tenant isolation + opt-in shared-pool semantics.
+ * FALDA pool test — proves multi-tenant isolation + opt-in shared-pool semantics.
  * Fully offline (deterministic local embedder, temp root on disk).
  *
  * Guarantees under test:
@@ -27,7 +27,7 @@ async function throws(name: string, fn: () => Promise<any> | any, code: string) 
 }
 
 async function main() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "stratus-pools-"));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "falda-pools-"));
   const pm = new PoolManager({ root, embed: makeLocalEmbedder(768), dim: 768 });
 
   // ── 1. Private self isolation ────────────────────────────────────────────
@@ -85,7 +85,7 @@ async function main() {
   pm.closeAll();
   fs.rmSync(root, { recursive: true, force: true });
 
-  console.log(`\nSTRATUS pools: ${pass} passed, ${fail} failed`);
+  console.log(`\nFALDA pools: ${pass} passed, ${fail} failed`);
   if (fail) process.exit(1);
   console.log("POOL SEMANTICS GREEN");
 }

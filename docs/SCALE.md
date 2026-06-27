@@ -1,14 +1,14 @@
-# STRATUS at Scale — Supporting Thousands of Agents
+# FALDA at Scale — Supporting Thousands of Agents
 
 **Document status:** architecture & capacity plan
-**Component:** STRATUS hierarchical agent-memory store
-**Question answered:** *What do we have to do, and what hardware do we need, to run STRATUS for thousands of concurrent scientific agents?*
+**Component:** FALDA hierarchical agent-memory store
+**Question answered:** *What do we have to do, and what hardware do we need, to run FALDA for thousands of concurrent scientific agents?*
 
 ---
 
-## 1. What STRATUS is today
+## 1. What FALDA is today
 
-STRATUS is a four-tier memory store, all-open, all-local:
+FALDA is a four-tier memory store, all-open, all-local:
 
 | Tier | Name | Contents | Backing store |
 |---|---|---|---|
@@ -18,7 +18,7 @@ STRATUS is a four-tier memory store, all-open, all-local:
 | **T3** | Core | long-lived persona / project core | filesystem blob |
 
 Recall fuses **dense** (sqlite-vec cosine) and **lexical** (FTS5 BM25) results
-via reciprocal-rank fusion. The default single-process gateway (`stratus serve`)
+via reciprocal-rank fusion. The default single-process gateway (`falda serve`)
 embeds an entire store in one Node process backed by one SQLite database.
 
 That shape is perfect for **1–50 agents on one box**. It is *not* what carries
@@ -123,7 +123,7 @@ distillation). Storage assumes embeddings at 768-dim float32 = 3 KB/vector.
 | GPU | 1 × 24 GB (e.g. one A10/L4/3090) | embedding model serving, batched |
 | Network | 10 GbE | local, not a constraint at this size |
 
-Single `stratus serve` + one embedding container co-resident. No router needed.
+Single `falda serve` + one embedding container co-resident. No router needed.
 This is the "one good workstation / one cloud VM" tier.
 
 ### Tier B — Department: ~1,000–2,500 agents
@@ -184,7 +184,7 @@ comparison. Plan GPU first, fast disk second, CPU last.
 
 ## 6. Summary
 
-Getting STRATUS from one agent to thousands is four moves — **store pool +
+Getting FALDA from one agent to thousands is four moves — **store pool +
 sharding, a stateless gateway fleet, a batched embedding tier, and async pipeline
 workers** — none of which require leaving the open/self-hosted stack. The
 hardware story is dominated by **embedding GPUs** and **fast NVMe**; gateway CPU

@@ -1,8 +1,8 @@
-# STRATUS
+# FALDA
 
 **Clustered hierarchical memory for scientific agents.**
 
-STRATUS gives an autonomous agent a layered, long-lived memory — like atmospheric
+FALDA gives an autonomous agent a layered, long-lived memory — like geological
 strata, knowledge settles into tiers, from raw observation up to a stable core.
 It is built entirely on open, self-hostable components: SQLite, `sqlite-vec`,
 SQLite FTS5, and any OpenAI-compatible embedding endpoint. No external service,
@@ -43,11 +43,11 @@ npm run smoke      # offline, deterministic — prints "ALL TIERS GREEN"
 ### As a library
 
 ```ts
-import { Stratus, makeEmbedder } from "stratus-memory";
+import { Falda, makeEmbedder } from "falda-memory";
 
-const memory = new Stratus({
-  dbPath: "./stratus.db",
-  blobDir: "./stratus-blobs",
+const memory = new Falda({
+  dbPath: "./falda.db",
+  blobDir: "./falda-blobs",
   embed: makeEmbedder(),   // OpenAI-compatible /v1/embeddings endpoint
   dim: 768,
 });
@@ -69,14 +69,14 @@ curl localhost:8077/healthz
 
 See [`docs/API.md`](docs/API.md) for the full route table.
 
-To connect an agent runtime (Hermes, OpenClaw, or your own) to STRATUS — shadow
+To connect an agent runtime (Hermes, OpenClaw, or your own) to FALDA — shadow
 or live, single-tenant or shared-pool — see
 [`docs/HARNESS_INTEGRATION.md`](docs/HARNESS_INTEGRATION.md).
 
 ### Distillation (T0 → T1 → T2 → T3)
 
 The gateway provides the storage primitives; promotion between tiers is driven
-by a standalone sidecar, [`stratus_distiller.py`](stratus_distiller.py). It
+by a standalone sidecar, [`falda_distiller.py`](falda_distiller.py). It
 polls the Stream over the HTTP API and uses any OpenAI-compatible chat model to:
 
 - **T0 → T1**: extract typed atoms (`persona` / `episodic` / `instruction`)
@@ -86,14 +86,14 @@ polls the Stream over the HTTP API and uses any OpenAI-compatible chat model to:
 - **T2 → T3**: synthesize a stable core/persona (`L3_INTERVAL_S`, default 6h).
 
 It touches only the documented HTTP API plus your LLM endpoint, and keeps a
-restart-safe checkpoint in `~/.stratus/distiller_state.json`.
+restart-safe checkpoint in `~/.falda/distiller_state.json`.
 
 ```bash
 export LLM_BASE_URL=http://localhost:8000/v1   # any OpenAI-compatible chat endpoint
 export LLM_API_KEY=...                          # required, no default
 export DISTILLER_MODEL=gpt-4o-mini
-python3 stratus_distiller.py --once             # one backfill pass
-python3 stratus_distiller.py                    # continuous loop
+python3 falda_distiller.py --once             # one backfill pass
+python3 falda_distiller.py                    # continuous loop
 ```
 
 | Env var          | Default            | Notes                              |
@@ -114,16 +114,16 @@ locally (Ollama, vLLM, llama.cpp) or against a self-hosted lab server.
 
 | Env var                   | Default                        | Notes                                  |
 |---------------------------|--------------------------------|----------------------------------------|
-| `STRATUS_EMBED_BASE_URL`  | `http://localhost:11434/v1`    | embeddings endpoint                    |
-| `STRATUS_EMBED_API_KEY`   | `x`                            | bearer token (`x` for keyless local)   |
-| `STRATUS_EMBED_MODEL`     | `nomic-embed-text`             | embedding model id                     |
-| `STRATUS_DIM`             | `768`                          | must match the model's dimensionality  |
-| `STRATUS_DB`              | `./stratus.db`                 | SQLite file                            |
-| `STRATUS_BLOBS`           | `./stratus-blobs`              | scene + core blob directory            |
-| `STRATUS_PORT`            | `8077`                         | gateway port                           |
+| `FALDA_EMBED_BASE_URL`  | `http://localhost:11434/v1`    | embeddings endpoint                    |
+| `FALDA_EMBED_API_KEY`   | `x`                            | bearer token (`x` for keyless local)   |
+| `FALDA_EMBED_MODEL`     | `nomic-embed-text`             | embedding model id                     |
+| `FALDA_DIM`             | `768`                          | must match the model's dimensionality  |
+| `FALDA_DB`              | `./falda.db`                 | SQLite file                            |
+| `FALDA_BLOBS`           | `./falda-blobs`              | scene + core blob directory            |
+| `FALDA_PORT`            | `8077`                         | gateway port                           |
 
 Recommended open embedding models: `nomic-embed-text` (768), `BAAI/bge-base-en-v1.5`
-(768), `nomic-ai/nomic-embed-text-v1.5` (768). Set `STRATUS_DIM` to match.
+(768), `nomic-ai/nomic-embed-text-v1.5` (768). Set `FALDA_DIM` to match.
 
 ---
 
@@ -131,7 +131,7 @@ Recommended open embedding models: `nomic-embed-text` (768), `BAAI/bge-base-en-v
 
 ```
                     ┌──────────────────────────┐
-   agent  ───────▶  │  Stratus  (lib or HTTP)  │
+   agent  ───────▶  │  Falda  (lib or HTTP)  │
                     └────────────┬─────────────┘
             ┌────────────────────┼────────────────────┐
             ▼                    ▼                     ▼
@@ -143,17 +143,19 @@ Recommended open embedding models: `nomic-embed-text` (768), `BAAI/bge-base-en-v
                           embeddings via OpenAI-compatible endpoint
 ```
 
-The store is a single embeddable class (`Stratus`). The gateway is a thin
+The store is a single embeddable class (`Falda`). The gateway is a thin
 JSON wrapper over it for multi-process or polyglot deployments.
 
 ---
 
-## Why "STRATUS"
+## Why "FALDA"
 
-Memory in this system is **stratified**: it settles into discrete layers, and
-recall draws from whichever stratum best answers a query. *Strata* is the
-scientific term for layers; the name reads operationally and describes exactly
-what the system does.
+*Falda* is the Italian word for a **layer** or **stratum** — and, in hydrology, a
+*falda acquifera* is an aquifer: water held and drawn from layered ground.
+Memory in this system works the same way. It settles into discrete strata — from
+raw observation up to long-lived persona — and recall draws from whichever layer
+best answers a query, the way a well draws from the right depth. The name reads
+operationally and describes exactly what the system does.
 
 ## License
 

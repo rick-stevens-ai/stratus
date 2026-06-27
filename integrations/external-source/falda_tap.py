@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
 """
-STRATUS dual-run shadow tap.
+FALDA dual-run shadow tap.
 
 Tails an external memory source's L0 conversation JSONL shards and mirrors each
-new turn to the STRATUS gateway (/stream/add). The external source remains 100%
+new turn to the FALDA gateway (/stream/add). The external source remains 100%
 authoritative and untouched — this only READS its output files and forwards to
-STRATUS so the two systems accumulate the SAME conversation traffic in parallel
+FALDA so the two systems accumulate the SAME conversation traffic in parallel
 for the dual-run validation window.
 
 Design:
-  - Per-file byte-offset checkpoint in ~/.stratus/tap_state.json -> survives restarts,
+  - Per-file byte-offset checkpoint in ~/.falda/tap_state.json -> survives restarts,
     never re-sends a line, never misses one.
   - Batches by sessionKey per poll for efficiency.
-  - Best-effort: a STRATUS outage just means lines wait; offsets only advance on 200.
+  - Best-effort: a FALDA outage just means lines wait; offsets only advance on 200.
   - Loops every POLL_SECONDS. Idempotent and safe to run under launchd.
 """
 import json, os, time, urllib.request, urllib.error, glob, sys
 
 CONV_DIR = os.environ.get("SOURCE_CONV_DIR", os.path.expanduser("~/.external-memory/conversations"))
-STRATUS  = os.environ.get("STRATUS_URL", "http://localhost:8077")
-STATE    = os.path.expanduser("~/.stratus/tap_state.json")
-LOG      = os.path.expanduser("~/.stratus/tap.log")
+FALDA  = os.environ.get("FALDA_URL", "http://localhost:8077")
+STATE    = os.path.expanduser("~/.falda/tap_state.json")
+LOG      = os.path.expanduser("~/.falda/tap.log")
 POLL_SECONDS = int(os.environ.get("TAP_POLL", "20"))
 
 def log(m):
@@ -42,20 +42,20 @@ def save_state(st):
 
 def post(route, body):
     data = json.dumps(body).encode()
-    req = urllib.request.Request(STRATUS + route, data=data,
+    req = urllib.request.Request(FALDA + route, data=data,
                                  headers={"content-type": "application/json"})
     with urllib.request.urlopen(req, timeout=10) as r:
         return r.status, r.read()
 
-def stratus_up():
+def falda_up():
     try:
-        with urllib.request.urlopen(STRATUS + "/healthz", timeout=5) as r:
+        with urllib.request.urlopen(FALDA + "/healthz", timeout=5) as r:
             return r.status == 200
     except Exception:
         return False
 
 def process_file(path, st):
-    """Read new bytes from path, group new turns by sessionKey, forward to STRATUS."""
+    """Read new bytes from path, group new turns by sessionKey, forward to FALDA."""
     off = st.get(path, 0)
     size = os.path.getsize(path)
     if size <= off:
@@ -96,16 +96,16 @@ def process_file(path, st):
                 log(f"WARN /stream/add status={status} for {sk}; will retry (offset held)")
                 return sent  # don't advance offset on failure
         except urllib.error.URLError as e:
-            log(f"WARN STRATUS unreachable ({e}); holding offset")
+            log(f"WARN FALDA unreachable ({e}); holding offset")
             return sent
     st[path] = consumed if batches else new_off
     return sent
 
 def main():
-    log(f"STRATUS tap starting. conv_dir={CONV_DIR} stratus={STRATUS} poll={POLL_SECONDS}s")
+    log(f"FALDA tap starting. conv_dir={CONV_DIR} falda={FALDA} poll={POLL_SECONDS}s")
     while True:
-        if not stratus_up():
-            log("STRATUS not healthy; waiting")
+        if not falda_up():
+            log("FALDA not healthy; waiting")
             time.sleep(POLL_SECONDS); continue
         st = load_state()
         total = 0
@@ -116,7 +116,7 @@ def main():
                 log(f"ERR processing {path}: {e}")
         if total:
             save_state(st)
-            log(f"mirrored {total} turns to STRATUS")
+            log(f"mirrored {total} turns to FALDA")
         time.sleep(POLL_SECONDS)
 
 if __name__ == "__main__":

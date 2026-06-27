@@ -2,9 +2,9 @@
  * Minimal embedded-library usage example.
  * Run: npx tsx examples/basic.ts   (after `npm install`)
  */
-import { Stratus, makeLocalEmbedder } from "../src/index.js";
+import { Falda, makeLocalEmbedder } from "../src/index.js";
 
-const memory = new Stratus({
+const memory = new Falda({
   dbPath: "./example.db",
   blobDir: "./example-blobs",
   embed: makeLocalEmbedder(768), // swap for makeEmbedder() against a real endpoint

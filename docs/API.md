@@ -1,7 +1,7 @@
-# STRATUS API
+# FALDA API
 
 All routes are `POST` with a JSON body and JSON response, except `/healthz` (`GET`).
-Gateway default port: `8077` (`STRATUS_PORT`).
+Gateway default port: `8077` (`FALDA_PORT`).
 
 ## Tier T0 — Stream
 

@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-STRATUS distiller — closes the day-1 distillation gap.
+FALDA distiller — closes the day-1 distillation gap.
 
-STRATUS ships storage primitives (addStream / upsertAtom / writeScene / writeCore)
+FALDA ships storage primitives (addStream / upsertAtom / writeScene / writeCore)
 but NO process that promotes T0 stream -> T1 atoms -> T2 scenes -> T3 core.
 The shadow tap mirrors raw turns into T0 only, so without this the dual-run
 validates CAPTURE but not DISTILLATION. This sidecar runs the promotion loop,
 mirroring a standard L0->L1->L2->L3 distillation cadence.
 
 Design constraints:
-  - Sidecar only. Calls the documented STRATUS HTTP API (:8077) + Argo. Never
-    edits the STRATUS TS repo (that is Ollie's maintenance lane) and never
+  - Sidecar only. Calls the documented FALDA HTTP API (:8077) + Argo. Never
+    edits the FALDA TS repo (that is Ollie's maintenance lane) and never
     touches the authoritative source store. Fully reversible: stop the process, the dual-run reverts to
     capture-only.
-  - STRATUS stays SHADOW: distilled atoms/scenes/core live in STRATUS's own DB,
+  - FALDA stays SHADOW: distilled atoms/scenes/core live in FALDA's own DB,
     never injected into the agent loop. A bug here cannot degrade either agent.
 
 Tiers / cadence:
@@ -24,21 +24,21 @@ Tiers / cadence:
   T2->T3  every L3_INTERVAL_S, synthesize scenes into a persona/core doc
           -> /core/write.
 
-Checkpoint: ~/.stratus/distiller_state.json (last distilled stream ts + counters).
+Checkpoint: ~/.falda/distiller_state.json (last distilled stream ts + counters).
 Idempotent: atom IDs are content-hash-derived so re-running never duplicates.
 """
 import json, os, sys, time, hashlib, urllib.request, urllib.error
 from datetime import datetime, timezone
 
 HOME      = os.path.expanduser("~")
-STRATUS   = os.environ.get("STRATUS_URL", "http://localhost:8077")
+FALDA   = os.environ.get("FALDA_URL", "http://localhost:8077")
 # Any OpenAI-compatible chat-completions endpoint. Point at your own proxy.
 ARGO_URL  = os.environ.get("LLM_BASE_URL") or os.environ.get("ARGO_BASE_URL", "http://localhost:8000/v1")
 # Required: no default. Set LLM_API_KEY (or ARGO_API_KEY) in the environment.
 ARGO_KEY  = os.environ.get("LLM_API_KEY") or os.environ.get("ARGO_API_KEY", "")
 ARGO_MODEL= os.environ.get("DISTILLER_MODEL", "gpt-4o-mini")
-STATE     = os.path.join(HOME, ".stratus", "distiller_state.json")
-LOG       = os.path.join(HOME, ".stratus", "distiller.log")
+STATE     = os.path.join(HOME, ".falda", "distiller_state.json")
+LOG       = os.path.join(HOME, ".falda", "distiller.log")
 
 L1_EVERY_N    = int(os.environ.get("L1_EVERY_N", "10"))      # new turns -> trigger atom extraction
 L2_INTERVAL_S = int(os.environ.get("L2_INTERVAL_S", "3600")) # scene synthesis cadence
@@ -67,8 +67,8 @@ def http_json(url, payload, headers=None, timeout=120):
         return json.loads(r.read().decode())
 
 
-def stratus(route, payload):
-    return http_json(f"{STRATUS}{route}", payload)
+def falda(route, payload):
+    return http_json(f"{FALDA}{route}", payload)
 
 
 def argo_chat(system, user, max_tokens=2000, timeout=180):
@@ -165,7 +165,7 @@ def _extract_chunk(turns):
             continue
         aid = "l1-" + hashlib.sha256((t + "|" + content).encode()).hexdigest()[:24]
         try:
-            stratus("/atoms/upsert", {
+            falda("/atoms/upsert", {
                 "id": aid, "type": t, "content": content,
                 "background": f"priority={a.get('priority','')};src=distiller;at={datetime.now(timezone.utc).isoformat()}",
             })
@@ -176,7 +176,7 @@ def _extract_chunk(turns):
 
 
 def run_l1(state):
-    q = stratus("/stream/query", {"limit": 500})
+    q = falda("/stream/query", {"limit": 500})
     msgs = list(reversed(q.get("messages", [])))  # oldest-first
     last_ts = state["last_ts"]
     new = [m for m in msgs if m.get("timestamp", "") > last_ts] if last_ts else msgs
@@ -205,7 +205,7 @@ L2_SYS = (
 
 
 def run_l2(state):
-    a = stratus("/atoms/query", {"limit": 60})
+    a = falda("/atoms/query", {"limit": 60})
     items = a.get("items", [])
     if len(items) < 5:
         return 0
@@ -218,7 +218,7 @@ def run_l2(state):
     day = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     path = f"auto/{day}.md"
     try:
-        stratus("/scenes/write", {"path": path, "content": scene})
+        falda("/scenes/write", {"path": path, "content": scene})
         state["scenes_made"] += 1
         state["last_l2"] = time.time()
         log(f"L2: scene written -> {path} ({len(scene)} chars, total {state['scenes_made']})")
@@ -238,14 +238,14 @@ L3_SYS = (
 
 
 def run_l3(state):
-    sc = stratus("/scenes/ls", {"prefix": ""})
+    sc = falda("/scenes/ls", {"prefix": ""})
     entries = sc.get("entries", [])
     if not entries:
         return 0
     blocks = []
     for e in entries[-12:]:
         try:
-            r = stratus("/scenes/read", {"path": e["path"]})
+            r = falda("/scenes/read", {"path": e["path"]})
             if r.get("content"):
                 blocks.append(f"## {e['path']}\n{r['content']}")
         except Exception:
@@ -254,7 +254,7 @@ def run_l3(state):
         return 0
     existing = ""
     try:
-        existing = stratus("/core/read", {}).get("content", "")
+        existing = falda("/core/read", {}).get("content", "")
     except Exception:
         pass
     user = (("EXISTING CORE:\n" + existing + "\n\n") if existing else "") + \
@@ -267,7 +267,7 @@ def run_l3(state):
         log(f"L3 argo error: {e}")
         return 0
     try:
-        stratus("/core/write", {"content": core})
+        falda("/core/write", {"content": core})
         state["cores_made"] += 1
         state["last_l3"] = time.time()
         log(f"L3: core synthesized ({len(core)} chars, total {state['cores_made']})")
@@ -278,17 +278,17 @@ def run_l3(state):
 
 
 def loop():
-    log(f"distiller start: stratus={STRATUS} model={ARGO_MODEL} "
+    log(f"distiller start: falda={FALDA} model={ARGO_MODEL} "
         f"L1_EVERY_N={L1_EVERY_N} L2={L2_INTERVAL_S}s L3={L3_INTERVAL_S}s poll={POLL_S}s")
     while True:
         s = load_state()
         try:
-            q = stratus("/stream/query", {"limit": 1})
+            q = falda("/stream/query", {"limit": 1})
             total = q.get("total", 0)
             last_ts = s["last_ts"]
             new_count = 0
             if total:
-                allq = stratus("/stream/query", {"limit": 500})
+                allq = falda("/stream/query", {"limit": 500})
                 new_count = sum(1 for m in allq.get("messages", [])
                                 if m.get("timestamp", "") > last_ts) if last_ts else total
             if new_count >= L1_EVERY_N or (new_count > 0 and not last_ts):
@@ -300,7 +300,7 @@ def loop():
                 run_l3(s)
             save_state(s)
         except urllib.error.URLError as e:
-            log(f"stratus unreachable: {e}")
+            log(f"falda unreachable: {e}")
         except Exception as e:
             log(f"loop error: {e}")
         time.sleep(POLL_S)

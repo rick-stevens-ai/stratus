@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.stevens.falda-tap</string>
+  <key>ProgramArguments</key><array>
+    <string>/usr/bin/python3</string>
+    <string>REPLACE_ME_FALDA_CHECKOUT/integrations/external-source/falda_tap.py</string>
+  </array>
+  <key>WorkingDirectory</key><string>REPLACE_ME_FALDA_CHECKOUT</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>PATH</key><string>/usr/bin:/bin</string>
+    <key>FALDA_URL</key><string>http://localhost:8077</string>
+    <!-- tap also needs SOURCE_CONV_DIR + FALDA_TENANT; see INSTALL step 6 -->
+  </dict>
+  <key>StandardOutPath</key><string>REPLACE_ME_HOME/.falda/tap.log</string>
+  <key>StandardErrorPath</key><string>REPLACE_ME_HOME/.falda/tap.log</string>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+</dict></plist>

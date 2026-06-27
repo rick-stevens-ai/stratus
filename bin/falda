@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 #
-# stratus — CLI front-end for the STRATUS hierarchical agent-memory store.
+# falda — CLI front-end for the FALDA hierarchical agent-memory store.
 #
 # Commands:
-#   stratus serve            Start the HTTP gateway (uses built dist/ if present,
+#   falda serve            Start the HTTP gateway (uses built dist/ if present,
 #                            else falls back to tsx on the TypeScript source).
-#   stratus smoke            Run the offline smoke test.
-#   stratus build            Compile TypeScript -> dist/.
-#   stratus health [PORT]    Curl the gateway /healthz endpoint.
-#   stratus version          Print the package version.
-#   stratus help             This help.
+#   falda smoke            Run the offline smoke test.
+#   falda build            Compile TypeScript -> dist/.
+#   falda health [PORT]    Curl the gateway /healthz endpoint.
+#   falda version          Print the package version.
+#   falda help             This help.
 #
 # Environment:
-#   STRATUS_PORT             Gateway port (default 8077).
-#   STRATUS_DB               SQLite path (default ./stratus.db; ":memory:" for ephemeral).
-#   STRATUS_EMBED_BASE_URL   OpenAI-compatible /v1/embeddings base URL.
-#   STRATUS_EMBED_API_KEY    API key for the embedder (if required).
-#   STRATUS_EMBED_MODEL      Embedding model id (default nomic-embed-text).
+#   FALDA_PORT             Gateway port (default 8077).
+#   FALDA_DB               SQLite path (default ./falda.db; ":memory:" for ephemeral).
+#   FALDA_EMBED_BASE_URL   OpenAI-compatible /v1/embeddings base URL.
+#   FALDA_EMBED_API_KEY    API key for the embedder (if required).
+#   FALDA_EMBED_MODEL      Embedding model id (default nomic-embed-text).
 #
 set -euo pipefail
 
@@ -31,7 +31,7 @@ done
 ROOT="$(cd -P "$(dirname "$SELF")/.." && pwd)"
 cd "$ROOT"
 
-PORT="${STRATUS_PORT:-8077}"
+PORT="${FALDA_PORT:-8077}"
 
 usage() { sed -n '3,24p' "$0" | sed 's/^# \{0,1\}//'; }
 
@@ -43,7 +43,7 @@ run_node_or_tsx() {
   elif command -v npx >/dev/null 2>&1; then
     exec npx --yes tsx "$src"
   else
-    echo "stratus: no build found at $dist and tsx unavailable. Run: stratus build" >&2
+    echo "falda: no build found at $dist and tsx unavailable. Run: falda build" >&2
     exit 1
   fi
 }
@@ -51,7 +51,7 @@ run_node_or_tsx() {
 cmd="${1:-help}"; shift || true
 case "$cmd" in
   serve|gateway)
-    echo "stratus: starting gateway on :$PORT (Ctrl-C to stop)"
+    echo "falda: starting gateway on :$PORT (Ctrl-C to stop)"
     run_node_or_tsx "dist/gateway.js" "src/gateway.ts"
     ;;
   smoke)
@@ -71,7 +71,7 @@ case "$cmd" in
     usage
     ;;
   *)
-    echo "stratus: unknown command '$cmd' (try: stratus help)" >&2
+    echo "falda: unknown command '$cmd' (try: falda help)" >&2
     exit 1
     ;;
 esac

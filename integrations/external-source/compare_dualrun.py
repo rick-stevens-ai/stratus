@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""STRATUS vs external-source dual-run comparison.
+"""FALDA vs external-source dual-run comparison.
 Pulls turn/atom counts from both stores + runs identical recall queries against
 each, prints a parity report. Read-only on both. Safe to run anytime."""
 import json, sqlite3, urllib.request, os, glob
 
 SOURCE_DB   = os.path.expanduser(os.environ.get("SOURCE_DB", "~/.external-memory/vectors.db"))
 SOURCE_INST = os.path.expanduser(os.environ.get("SOURCE_DB_INSTANCE", "~/.external-memory/instances/main/vectors.db"))
-STRATUS = os.environ.get("STRATUS_URL", "http://localhost:8077")
+FALDA = os.environ.get("FALDA_URL", "http://localhost:8077")
 
 def q1(db, sql):
     try:
@@ -18,7 +18,7 @@ def q1(db, sql):
 
 def post(route, body):
     try:
-        req = urllib.request.Request(STRATUS+route, data=json.dumps(body).encode(),
+        req = urllib.request.Request(FALDA+route, data=json.dumps(body).encode(),
                                      headers={"content-type":"application/json"})
         with urllib.request.urlopen(req, timeout=10) as r:
             return json.loads(r.read())
@@ -26,7 +26,7 @@ def post(route, body):
         return {"error": str(e)}
 
 print("="*60)
-print("STRATUS vs external-source dual-run parity report")
+print("FALDA vs external-source dual-run parity report")
 print("="*60)
 
 # External-source counts (try main store; instance store)
@@ -35,19 +35,19 @@ print(f"\nExternal source store: {db}")
 print(f"  L0 conversations : {q1(db,'select count(*) from l0_conversations')}")
 print(f"  L1 records       : {q1(db,'select count(*) from l1_records')}")
 
-# STRATUS counts via API (query with high limit, count)
+# FALDA counts via API (query with high limit, count)
 st_stream = post("/stream/search", {"query":"the and a of","limit":5000})
 st_atoms  = post("/atoms/query", {"limit":5000})
-print(f"\nSTRATUS store ({STRATUS}):")
+print(f"\nFALDA store ({FALDA}):")
 sc = len(st_stream.get("messages",[])) if isinstance(st_stream,dict) and "messages" in st_stream else st_stream
 ac = len(st_atoms.get("items",[])) if isinstance(st_atoms,dict) and "items" in st_atoms else st_atoms
 print(f"  T0 stream (>=)   : {sc}")
 print(f"  T1 atoms  (>=)   : {ac}")
 
 # identical recall spot-checks
-print("\nRecall spot-checks (STRATUS hybrid):")
+print("\nRecall spot-checks (FALDA hybrid):")
 for query in ["scoring preference",
-              "STRATUS dual run",
+              "FALDA dual run",
               "corpus total count"]:
     r = post("/atoms/search", {"query":query,"limit":2})
     items = r.get("items",[]) if isinstance(r,dict) else []
@@ -55,4 +55,4 @@ for query in ["scoring preference",
     for it in items[:1]:
         print(f"      -> {it.get('content','')[:90]}")
 
-print("\n(External source remains authoritative; STRATUS is shadow-only this window.)")
+print("\n(External source remains authoritative; FALDA is shadow-only this window.)")

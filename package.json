@@ -1,5 +1,5 @@
 {
-  "name": "stratus-memory",
+  "name": "falda-memory",
   "version": "0.1.0",
   "description": "Clustered hierarchical memory for scientific agents \u2014 a four-tier (stream / atoms / scenes / core) memory store with hybrid dense + lexical recall, built entirely on open components.",
   "license": "Apache-2.0",
@@ -13,8 +13,8 @@
     }
   },
   "bin": {
-    "stratus": "bin/stratus",
-    "stratus-gateway": "dist/gateway.js"
+    "falda": "bin/falda",
+    "falda-gateway": "dist/gateway.js"
   },
   "files": [
     "dist",
@@ -30,7 +30,7 @@
     "test:pools": "tsx test/pools.test.ts",
     "gateway": "tsx src/gateway.ts",
     "example": "tsx examples/basic.ts",
-    "install:stratus": "bash install.sh"
+    "install:falda": "bash install.sh"
   },
   "keywords": [
     "memory",

@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- OpenClaw-side STRATUS shadow tap. Tails OpenClaw L0 session JSONL and
-     forwards new turns to the STRATUS gateway /stream/add with tenant=openclaw.
-     Byte-offset checkpoint at REPLACE_ME_HOME/.stratus/tap-checkpoint-openclaw.json.
+<!-- OpenClaw-side FALDA shadow tap. Tails OpenClaw L0 session JSONL and
+     forwards new turns to the FALDA gateway /stream/add with tenant=openclaw.
+     Byte-offset checkpoint at REPLACE_ME_HOME/.falda/tap-checkpoint-openclaw.json.
      Replace:
        REPLACE_ME_HOME           absolute home dir
        REPLACE_ME_PYTHON         absolute path to Python 3.11+
-       REPLACE_ME_STRATUS_URL    gateway URL (default http://127.0.0.1:8077)
+       REPLACE_ME_FALDA_URL    gateway URL (default http://127.0.0.1:8077)
      Install:
        cp to ~/Library/LaunchAgents/
-       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.stratus-tap-openclaw.plist
-       launchctl kickstart -k gui/$(id -u)/com.example.stratus-tap-openclaw -->
+       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.example.falda-tap-openclaw.plist
+       launchctl kickstart -k gui/$(id -u)/com.example.falda-tap-openclaw -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.example.stratus-tap-openclaw</string>
+    <string>com.example.falda-tap-openclaw</string>
 
     <key>ProgramArguments</key>
     <array>
         <string>REPLACE_ME_PYTHON</string>
-        <string>REPLACE_ME_HOME/.openclaw/stratus-dualrun/stratus_tap.py</string>
+        <string>REPLACE_ME_HOME/.openclaw/falda-dualrun/falda_tap.py</string>
     </array>
 
     <key>EnvironmentVariables</key>
@@ -28,9 +28,9 @@
         <string>REPLACE_ME_HOME</string>
         <key>SOURCE_CONV_DIR</key>
         <string>REPLACE_ME_HOME/.openclaw/sessions</string>
-        <key>STRATUS_URL</key>
-        <string>REPLACE_ME_STRATUS_URL</string>
-        <key>STRATUS_TENANT</key>
+        <key>FALDA_URL</key>
+        <string>REPLACE_ME_FALDA_URL</string>
+        <key>FALDA_TENANT</key>
         <string>openclaw</string>
     </dict>
 
@@ -41,10 +41,10 @@
     <true/>
 
     <key>StandardOutPath</key>
-    <string>REPLACE_ME_HOME/.openclaw/logs/stratus-tap-openclaw.out.log</string>
+    <string>REPLACE_ME_HOME/.openclaw/logs/falda-tap-openclaw.out.log</string>
 
     <key>StandardErrorPath</key>
-    <string>REPLACE_ME_HOME/.openclaw/logs/stratus-tap-openclaw.err.log</string>
+    <string>REPLACE_ME_HOME/.openclaw/logs/falda-tap-openclaw.err.log</string>
 
     <key>ThrottleInterval</key>
     <integer>10</integer>

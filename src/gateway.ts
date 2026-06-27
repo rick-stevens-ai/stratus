@@ -1,9 +1,9 @@
 /**
- * STRATUS HTTP gateway — exposes the four-tier memory store over a small JSON API.
+ * FALDA HTTP gateway — exposes the four-tier memory store over a small JSON API.
  *
  * Multi-tenant + opt-in shared pools (see docs/POOLS.md):
  *   Every data route accepts optional {tenant, pool} addressing.
- *     tenant : agent identity. Defaults to STRATUS_DEFAULT_TENANT (or "default").
+ *     tenant : agent identity. Defaults to FALDA_DEFAULT_TENANT (or "default").
  *     pool   : "self" (private, default) or a declared shared-pool name.
  *   With neither field set, behavior is single-tenant single-store parity against the
  *   default tenant's private store.
@@ -38,22 +38,22 @@ import { createServer } from "node:http";
 import { PoolManager, PoolError } from "./pools.js";
 import { makeEmbedder, makeLocalEmbedder } from "./embedder.js";
 
-const PORT = Number(process.env.STRATUS_PORT ?? 8077);
-const DIM = Number(process.env.STRATUS_DIM ?? 768);
-const ROOT = process.env.STRATUS_ROOT ?? "./stratus-data";
-const DEFAULT_TENANT = process.env.STRATUS_DEFAULT_TENANT ?? "default";
+const PORT = Number(process.env.FALDA_PORT ?? 8077);
+const DIM = Number(process.env.FALDA_DIM ?? 768);
+const ROOT = process.env.FALDA_ROOT ?? "./falda-data";
+const DEFAULT_TENANT = process.env.FALDA_DEFAULT_TENANT ?? "default";
 
 // Embedder selection:
-//   STRATUS_EMBED=local                  -> deterministic offline embedder (no network)
-//   STRATUS_EMBED=remote                 -> require a configured /v1/embeddings endpoint
-//   (unset) + STRATUS_EMBED_BASE_URL set -> remote
+//   FALDA_EMBED=local                  -> deterministic offline embedder (no network)
+//   FALDA_EMBED=remote                 -> require a configured /v1/embeddings endpoint
+//   (unset) + FALDA_EMBED_BASE_URL set -> remote
 //   (unset) + no base URL                -> local offline default (so it just works)
 function selectEmbedder() {
-  const mode = (process.env.STRATUS_EMBED ?? "").toLowerCase();
-  const hasRemote = !!process.env.STRATUS_EMBED_BASE_URL;
-  if (mode === "local") { console.log("STRATUS embedder: local (offline, deterministic)"); return makeLocalEmbedder(DIM); }
-  if (mode === "remote" || hasRemote) { console.log(`STRATUS embedder: remote (${process.env.STRATUS_EMBED_BASE_URL ?? "http://localhost:11434/v1"})`); return makeEmbedder(); }
-  console.log("STRATUS embedder: local (offline default; set STRATUS_EMBED_BASE_URL for dense recall)");
+  const mode = (process.env.FALDA_EMBED ?? "").toLowerCase();
+  const hasRemote = !!process.env.FALDA_EMBED_BASE_URL;
+  if (mode === "local") { console.log("FALDA embedder: local (offline, deterministic)"); return makeLocalEmbedder(DIM); }
+  if (mode === "remote" || hasRemote) { console.log(`FALDA embedder: remote (${process.env.FALDA_EMBED_BASE_URL ?? "http://localhost:11434/v1"})`); return makeEmbedder(); }
+  console.log("FALDA embedder: local (offline default; set FALDA_EMBED_BASE_URL for dense recall)");
   return makeLocalEmbedder(DIM);
 }
 
@@ -141,4 +141,4 @@ createServer((req, res) => {
       res.end(JSON.stringify({ error: String(e?.message ?? e) }));
     }
   });
-}).listen(PORT, () => console.log(`STRATUS gateway listening on :${PORT} (root=${ROOT}, default-tenant=${DEFAULT_TENANT})`));
+}).listen(PORT, () => console.log(`FALDA gateway listening on :${PORT} (root=${ROOT}, default-tenant=${DEFAULT_TENANT})`));

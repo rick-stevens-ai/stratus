@@ -1,21 +1,21 @@
 /**
- * Embedding client for STRATUS.
+ * Embedding client for FALDA.
  *
  * Calls an OpenAI-compatible /v1/embeddings endpoint — use any US open-weights
  * embedding model served via vLLM, Ollama, llama.cpp, or a hosted lab endpoint
  * (e.g. nomic-embed-text, BAAI/bge-base-en-v1.5, gte-base).
  *
  * Env:
- *   STRATUS_EMBED_BASE_URL   e.g. http://localhost:11434/v1  or  http://<lab-host>/v1
- *   STRATUS_EMBED_API_KEY    bearer token ("x" for keyless local servers)
- *   STRATUS_EMBED_MODEL      e.g. nomic-embed-text
+ *   FALDA_EMBED_BASE_URL   e.g. http://localhost:11434/v1  or  http://<lab-host>/v1
+ *   FALDA_EMBED_API_KEY    bearer token ("x" for keyless local servers)
+ *   FALDA_EMBED_MODEL      e.g. nomic-embed-text
  */
 export interface EmbedderConfig { baseUrl?: string; apiKey?: string; model?: string; }
 
 export function makeEmbedder(cfg: EmbedderConfig = {}) {
-  const baseUrl = cfg.baseUrl ?? process.env.STRATUS_EMBED_BASE_URL ?? "http://localhost:11434/v1";
-  const apiKey = cfg.apiKey ?? process.env.STRATUS_EMBED_API_KEY ?? "x";
-  const model = cfg.model ?? process.env.STRATUS_EMBED_MODEL ?? "nomic-embed-text";
+  const baseUrl = cfg.baseUrl ?? process.env.FALDA_EMBED_BASE_URL ?? "http://localhost:11434/v1";
+  const apiKey = cfg.apiKey ?? process.env.FALDA_EMBED_API_KEY ?? "x";
+  const model = cfg.model ?? process.env.FALDA_EMBED_MODEL ?? "nomic-embed-text";
 
   return async function embed(text: string): Promise<number[]> {
     const resp = await fetch(`${baseUrl}/embeddings`, {

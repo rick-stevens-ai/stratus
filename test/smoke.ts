@@ -1,8 +1,8 @@
 /**
- * STRATUS smoke test — exercises every tier and the hybrid recall path,
+ * FALDA smoke test — exercises every tier and the hybrid recall path,
  * fully offline (deterministic local embedder, in-memory SQLite).
  */
-import { Stratus } from "../src/stratus.js";
+import { Falda } from "../src/falda.js";
 import { makeLocalEmbedder } from "../src/embedder.js";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -15,8 +15,8 @@ function check(name: string, ok: boolean) {
 }
 
 async function main() {
-  const blobDir = fs.mkdtempSync(path.join(os.tmpdir(), "stratus-"));
-  const s = new Stratus({ dbPath: ":memory:", blobDir, embed: makeLocalEmbedder(768), dim: 768 });
+  const blobDir = fs.mkdtempSync(path.join(os.tmpdir(), "falda-"));
+  const s = new Falda({ dbPath: ":memory:", blobDir, embed: makeLocalEmbedder(768), dim: 768 });
 
   // T0 Stream
   const ids = await s.addStream("sess-1", [
@@ -55,7 +55,7 @@ async function main() {
   s.close();
   fs.rmSync(blobDir, { recursive: true, force: true });
 
-  console.log(`\nSTRATUS smoke: ${pass} passed, ${fail} failed`);
+  console.log(`\nFALDA smoke: ${pass} passed, ${fail} failed`);
   if (fail) process.exit(1);
   console.log("ALL TIERS GREEN");
 }

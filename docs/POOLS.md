@@ -1,12 +1,12 @@
-# STRATUS Pools — multi-tenant routing + opt-in shared pools
+# FALDA Pools — multi-tenant routing + opt-in shared pools
 
 Status: **v1 contract.** Implemented in `src/pools.ts`, wired in `src/gateway.ts`,
 proven by `test/pools.test.ts` (21 assertions). Additive — single-store callers
-and the `Stratus` class are unchanged.
+and the `Falda` class are unchanged.
 
 ## Why
 
-Until now STRATUS was single-tenant: one DB, one blob dir, no tenant axis. Two
+Until now FALDA was single-tenant: one DB, one blob dir, no tenant axis. Two
 needs:
 
 1. **Tenant routing** — many agents share one gateway, each with a *private*
@@ -21,7 +21,7 @@ Every data operation is addressed by a **(tenant, pool)** pair.
 
 | field    | meaning                                   | default            |
 |----------|-------------------------------------------|--------------------|
-| `tenant` | agent identity (`kukla`, `ollie`, …)      | `STRATUS_DEFAULT_TENANT` (`default`) |
+| `tenant` | agent identity (`kukla`, `ollie`, …)      | `FALDA_DEFAULT_TENANT` (`default`) |
 | `pool`   | namespace within reach                    | `self` (private)   |
 
 - **No `pool`** → the tenant's own private store (`self`). Pure single-store parity.
@@ -50,12 +50,12 @@ leak — the exact discipline-based failure mode we reject). Instead:
   open a `self` DB. The isolation boundary is the filesystem, not a query
   predicate.
 
-On-disk layout under `STRATUS_ROOT`:
+On-disk layout under `FALDA_ROOT`:
 
 ```
 root/
-  tenants/<tenant>/self/{stratus.db, blobs/}   private store (one per agent)
-  pools/<pool>/{stratus.db, blobs/}            shared store (one per pool)
+  tenants/<tenant>/self/{falda.db, blobs/}   private store (one per agent)
+  pools/<pool>/{falda.db, blobs/}            shared store (one per pool)
   pools.json                                   pool registry (roster + access)
 ```
 
@@ -75,7 +75,7 @@ multi-target fan-out the caller composes explicitly (client-side, or a future
 
 ### Data routes (all POST) — each accepts optional `{tenant?, pool?}`
 
-Behavior identical to single-store STRATUS, now scoped to the addressed store:
+Behavior identical to single-store FALDA, now scoped to the addressed store:
 
 ```
 /stream/{add,query,search,delete}
@@ -112,20 +112,20 @@ pool. Read routes require `read` or `readwrite`.
 
 | var | meaning | default |
 |-----|---------|---------|
-| `STRATUS_ROOT`           | pool root dir        | `./stratus-data` |
-| `STRATUS_DEFAULT_TENANT` | tenant when unset    | `default` |
-| `STRATUS_PORT` / `STRATUS_DIM` / `STRATUS_EMBED*` | as before | — |
+| `FALDA_ROOT`           | pool root dir        | `./falda-data` |
+| `FALDA_DEFAULT_TENANT` | tenant when unset    | `default` |
+| `FALDA_PORT` / `FALDA_DIM` / `FALDA_EMBED*` | as before | — |
 
 ## Migration from single-store
 
-The old `STRATUS_DB` / `STRATUS_BLOBS` single-store layout is superseded by
-`STRATUS_ROOT`. To migrate an existing deployment's data into the new layout,
+The old `FALDA_DB` / `FALDA_BLOBS` single-store layout is superseded by
+`FALDA_ROOT`. To migrate an existing deployment's data into the new layout,
 move the old store under the default tenant's self slot:
 
 ```
-mkdir -p $STRATUS_ROOT/tenants/$STRATUS_DEFAULT_TENANT/self
-mv old/stratus.db        $STRATUS_ROOT/tenants/default/self/stratus.db
-mv old/stratus-blobs     $STRATUS_ROOT/tenants/default/self/blobs
+mkdir -p $FALDA_ROOT/tenants/$FALDA_DEFAULT_TENANT/self
+mv old/falda.db        $FALDA_ROOT/tenants/default/self/falda.db
+mv old/falda-blobs     $FALDA_ROOT/tenants/default/self/blobs
 ```
 
 After that, an unaddressed request (`{}`) hits exactly the old data — no behavior

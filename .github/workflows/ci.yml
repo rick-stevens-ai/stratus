@@ -40,10 +40,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Assert no origin-stack vocabulary in tracked files
         run: |
-          # STRATUS is born-clean US-origin. Block any reintroduction of
+          # FALDA is born-clean US-origin. Block any reintroduction of
           # origin-stack vocabulary in tracked source/docs/prose.
           if git grep -inE 'tencent|tdai|alibaba|repatriat|tcvdb|jieba|memory-tencentdb' -- . ':(exclude).github/workflows/ci.yml'; then
-            echo "::error::origin-stack vocabulary found in tracked files — STRATUS must stay origin-clean."
+            echo "::error::origin-stack vocabulary found in tracked files — FALDA must stay origin-clean."
             exit 1
           fi
           echo "origin-clean: OK (no forbidden strings)"

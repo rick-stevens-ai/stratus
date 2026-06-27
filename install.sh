@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #
-# STRATUS installer
+# FALDA installer
 # -----------------
-# One-shot setup for the STRATUS hierarchical agent-memory store.
+# One-shot setup for the FALDA hierarchical agent-memory store.
 # Verifies the toolchain, installs dependencies, builds, runs the offline
-# smoke test, and (optionally) links the `stratus` CLI onto your PATH.
+# smoke test, and (optionally) links the `falda` CLI onto your PATH.
 #
 # Usage:
 #   ./install.sh                 # install + build + smoke test
-#   ./install.sh --link          # also symlink bin/stratus into a PATH dir
+#   ./install.sh --link          # also symlink bin/falda into a PATH dir
 #   ./install.sh --prefix DIR    # link target dir (default: /usr/local/bin, else ~/.local/bin)
 #   ./install.sh --no-smoke      # skip the smoke test
 #   ./install.sh --help
@@ -48,7 +48,7 @@ while [ $# -gt 0 ]; do
 done
 
 echo
-say "STRATUS installer"
+say "FALDA installer"
 echo "    repo: $HERE"
 echo
 
@@ -98,9 +98,9 @@ else
 fi
 
 # ---- 5. optional: link the CLI onto PATH -----------------------------------
-chmod +x bin/stratus 2>/dev/null || true
+chmod +x bin/falda 2>/dev/null || true
 if [ "$DO_LINK" -eq 1 ]; then
-  say "Linking the stratus CLI"
+  say "Linking the falda CLI"
   if [ -z "$PREFIX" ]; then
     if [ -d /usr/local/bin ] && [ -w /usr/local/bin ]; then
       PREFIX=/usr/local/bin
@@ -109,8 +109,8 @@ if [ "$DO_LINK" -eq 1 ]; then
       mkdir -p "$PREFIX"
     fi
   fi
-  ln -sf "$HERE/bin/stratus" "$PREFIX/stratus"
-  ok "linked -> $PREFIX/stratus"
+  ln -sf "$HERE/bin/falda" "$PREFIX/falda"
+  ok "linked -> $PREFIX/falda"
   case ":$PATH:" in
     *":$PREFIX:"*) : ;;
     *) warn "$PREFIX is not on your PATH — add it: export PATH=\"$PREFIX:\$PATH\"" ;;
@@ -118,11 +118,11 @@ if [ "$DO_LINK" -eq 1 ]; then
 else
   echo
   echo "    To put the CLI on your PATH:   ./install.sh --link"
-  echo "    Or run it directly:            ./bin/stratus help"
+  echo "    Or run it directly:            ./bin/falda help"
 fi
 
 echo
 say "Done."
-echo "    Start the gateway:   ./bin/stratus serve"
-echo "    Health check:        curl -s localhost:\${STRATUS_PORT:-8077}/healthz"
+echo "    Start the gateway:   ./bin/falda serve"
+echo "    Health check:        curl -s localhost:\${FALDA_PORT:-8077}/healthz"
 echo

@@ -5,7 +5,7 @@ Proposal to make `HARNESS_INTEGRATION.md` replication-grade. Authored by Kukla
 merge these deliberately. Everything secret here is tokenized `REPLACE_ME_*`.
 
 **What this delta proposes:** (A) a correction to the committed §2c subject tree
-(it names a `stratus.*` tree that does not exist on the live broker), (B) the
+(it names a `falda.*` tree that does not exist on the live broker), (B) the
 NATS broker deploy recipe (broker runs on Kukla's host, so it's mine to author),
 (C) the four Hermes-side launchd plists as copy-paste templates, (D) the
 Hermes-side bootstrap order.
@@ -18,8 +18,8 @@ plus deploy mechanics.
 
 ## A. CORRECTION to §2c — subject tree (this is a bug, not a style nit)
 
-The committed §2c references `stratus.openclaw.inbox`, `stratus.hermes.inbox`,
-`stratus.broadcast`. Queried against the live broker
+The committed §2c references `falda.openclaw.inbox`, `falda.hermes.inbox`,
+`falda.broadcast`. Queried against the live broker
 (`nats://100.86.220.115:4222`, user `kukla`) the actual streams are:
 
 | Stream | Subjects |
@@ -30,11 +30,11 @@ The committed §2c references `stratus.openclaw.inbox`, `stratus.hermes.inbox`,
 | `sibling-kukla` *(legacy, pending retirement)* | `sibling.kukla.>` |
 | `sibling-ollie` *(legacy, pending retirement)* | `sibling.ollie.>` |
 
-There is **no `stratus.*` subject tree**. Two fixes needed in §2c:
+There is **no `falda.*` subject tree**. Two fixes needed in §2c:
 
-1. `stratus.*` → `sibline.*` throughout.
+1. `falda.*` → `sibline.*` throughout.
 2. The agent tokens are **`kukla` / `ollie`**, not `hermes` / `openclaw`. The
-   message bus predates the STRATUS naming and uses the agent identities.
+   message bus predates the FALDA naming and uses the agent identities.
 
 Corrected subject map (the v1 contract — this is authoritative):
 
@@ -141,7 +141,7 @@ process (`launchctl kickstart -k gui/$(id -u)/<subscriber-label>` on macOS).
 
 Propose `deploy/launchd/` with these four `.plist.template` files. Tokens:
 `REPLACE_ME_HOME`, `REPLACE_ME_TAILSCALE_IP`, `REPLACE_ME_NODE` (absolute node
-path — see ABI note), `REPLACE_ME_STRATUS_CHECKOUT`.
+path — see ABI note), `REPLACE_ME_FALDA_CHECKOUT`.
 
 ### `com.stevens.nats-broker.plist.template`
 ```xml
@@ -185,53 +185,53 @@ path — see ABI note), `REPLACE_ME_STRATUS_CHECKOUT`.
 </dict></plist>
 ```
 
-### `com.stevens.stratus-gateway.plist.template`
+### `com.stevens.falda-gateway.plist.template`
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>com.stevens.stratus-gateway</string>
+  <key>Label</key><string>com.stevens.falda-gateway</string>
   <key>ProgramArguments</key><array>
     <!-- REPLACE_ME_NODE MUST be the SAME node that ran `npm install`/`npm rebuild
          better-sqlite3` (native ABI). Mismatch => ERR_DLOPEN_FAILED. -->
     <string>REPLACE_ME_NODE</string>
-    <string>REPLACE_ME_STRATUS_CHECKOUT/node_modules/.bin/tsx</string>
-    <string>REPLACE_ME_STRATUS_CHECKOUT/src/gateway.ts</string>
+    <string>REPLACE_ME_FALDA_CHECKOUT/node_modules/.bin/tsx</string>
+    <string>REPLACE_ME_FALDA_CHECKOUT/src/gateway.ts</string>
   </array>
-  <key>WorkingDirectory</key><string>REPLACE_ME_STRATUS_CHECKOUT</string>
+  <key>WorkingDirectory</key><string>REPLACE_ME_FALDA_CHECKOUT</string>
   <key>EnvironmentVariables</key><dict>
     <key>PATH</key><string>REPLACE_ME_NODE_BINDIR:/usr/bin:/bin</string>
-    <key>STRATUS_DB</key><string>REPLACE_ME_HOME/.stratus/stratus.db</string>
-    <key>STRATUS_BLOBS</key><string>REPLACE_ME_HOME/.stratus/blobs</string>
-    <key>STRATUS_EMBED</key><string>local</string>   <!-- or 'remote'; see INSTALL -->
-    <key>STRATUS_PORT</key><string>8077</string>
+    <key>FALDA_DB</key><string>REPLACE_ME_HOME/.falda/falda.db</string>
+    <key>FALDA_BLOBS</key><string>REPLACE_ME_HOME/.falda/blobs</string>
+    <key>FALDA_EMBED</key><string>local</string>   <!-- or 'remote'; see INSTALL -->
+    <key>FALDA_PORT</key><string>8077</string>
   </dict>
-  <key>StandardOutPath</key><string>REPLACE_ME_HOME/.stratus/gateway.log</string>
-  <key>StandardErrorPath</key><string>REPLACE_ME_HOME/.stratus/gateway.log</string>
+  <key>StandardOutPath</key><string>REPLACE_ME_HOME/.falda/gateway.log</string>
+  <key>StandardErrorPath</key><string>REPLACE_ME_HOME/.falda/gateway.log</string>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ThrottleInterval</key><integer>30</integer>
 </dict></plist>
 ```
 
-### `com.stevens.stratus-tap.plist.template`
+### `com.stevens.falda-tap.plist.template`
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-  <key>Label</key><string>com.stevens.stratus-tap</string>
+  <key>Label</key><string>com.stevens.falda-tap</string>
   <key>ProgramArguments</key><array>
     <string>/usr/bin/python3</string>
-    <string>REPLACE_ME_STRATUS_CHECKOUT/integrations/external-source/stratus_tap.py</string>
+    <string>REPLACE_ME_FALDA_CHECKOUT/integrations/external-source/falda_tap.py</string>
   </array>
-  <key>WorkingDirectory</key><string>REPLACE_ME_STRATUS_CHECKOUT</string>
+  <key>WorkingDirectory</key><string>REPLACE_ME_FALDA_CHECKOUT</string>
   <key>EnvironmentVariables</key><dict>
     <key>PATH</key><string>/usr/bin:/bin</string>
-    <key>STRATUS_URL</key><string>http://localhost:8077</string>
-    <!-- tap also needs SOURCE_CONV_DIR + STRATUS_TENANT; see INSTALL step 6 -->
+    <key>FALDA_URL</key><string>http://localhost:8077</string>
+    <!-- tap also needs SOURCE_CONV_DIR + FALDA_TENANT; see INSTALL step 6 -->
   </dict>
-  <key>StandardOutPath</key><string>REPLACE_ME_HOME/.stratus/tap.log</string>
-  <key>StandardErrorPath</key><string>REPLACE_ME_HOME/.stratus/tap.log</string>
+  <key>StandardOutPath</key><string>REPLACE_ME_HOME/.falda/tap.log</string>
+  <key>StandardErrorPath</key><string>REPLACE_ME_HOME/.falda/tap.log</string>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ThrottleInterval</key><integer>30</integer>
@@ -263,15 +263,15 @@ everything depends on it):
    bash deploy/nats/create-streams.sh
    nats --context sibline stream ls      # verify 3 streams
 
-2. STRATUS gateway (any host; here m1):
-   git clone <repo> ~/code/stratus && cd ~/code/stratus
+2. FALDA gateway (any host; here m1):
+   git clone <repo> ~/code/falda && cd ~/code/falda
    nvm use 24                            # pin the node you'll run under
    npm ci
    npm rebuild better-sqlite3           # under the SAME node
-   mkdir -p ~/.stratus/blobs
-   cp deploy/launchd/com.stevens.stratus-gateway.plist.template \
+   mkdir -p ~/.falda/blobs
+   cp deploy/launchd/com.stevens.falda-gateway.plist.template \
       ~/Library/LaunchAgents/...plist   # fill REPLACE_ME_NODE = `which node`
-   launchctl load ~/Library/LaunchAgents/com.stevens.stratus-gateway.plist
+   launchctl load ~/Library/LaunchAgents/com.stevens.falda-gateway.plist
    curl -s localhost:8077/healthz       # {"ok":true,...}
 
 3. Sibline subscriber (Hermes side):
@@ -281,14 +281,14 @@ everything depends on it):
    cp deploy/launchd/com.stevens.nats-subscriber.plist.template ...plist
    launchctl load ~/Library/LaunchAgents/com.stevens.nats-subscriber.plist
 
-4. STRATUS tap (shadow capture):
-   # set SOURCE_CONV_DIR (the memory provider's L0 JSONL dir) + STRATUS_TENANT
-   cp deploy/launchd/com.stevens.stratus-tap.plist.template ...plist
-   launchctl load ~/Library/LaunchAgents/com.stevens.stratus-tap.plist
+4. FALDA tap (shadow capture):
+   # set SOURCE_CONV_DIR (the memory provider's L0 JSONL dir) + FALDA_TENANT
+   cp deploy/launchd/com.stevens.falda-tap.plist.template ...plist
+   launchctl load ~/Library/LaunchAgents/com.stevens.falda-tap.plist
 
 5. Verify end-to-end:
    - publish a test envelope to sibline.<peer>.inbox; confirm peer receives.
-   - tail ~/.stratus/tap.log; confirm new turns flow to /stream/add.
+   - tail ~/.falda/tap.log; confirm new turns flow to /stream/add.
    - curl localhost:8077/stream/search?... ; confirm capture.
 ```
 
@@ -298,7 +298,7 @@ Secrets layout (concrete files, propose as a table in the doc):
 |---|---|---|---|
 | NATS agent password | `~/.config/sibling-nats/cred` (`SIBLING_NATS_PASS=`) | 0600 | canonical; `/tmp/.nats_creds` is a stale fallback, may not exist |
 | Webhook HMAC secret | `~/.hermes/webhook_subscriptions.json` | 0600 | Hermes auto-redacts in echo; JSON parser sees raw |
-| Argo API key (STRATUS remote embed/distill) | env / keychain | — | only if `STRATUS_EMBED=remote` |
+| Argo API key (FALDA remote embed/distill) | env / keychain | — | only if `FALDA_EMBED=remote` |
 
 ---
 

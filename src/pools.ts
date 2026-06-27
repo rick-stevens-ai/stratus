@@ -1,5 +1,5 @@
 /**
- * STRATUS pool layer — multi-tenant routing + opt-in shared pools.
+ * FALDA pool layer — multi-tenant routing + opt-in shared pools.
  *
  * Design (see docs/POOLS.md for the full contract):
  *
@@ -22,13 +22,13 @@
  *     shared table with a tenant column that a forgotten WHERE clause could leak.
  *
  * Layout under root/:
- *   root/tenants/<tenant>/self/{stratus.db, blobs/}     private store
- *   root/pools/<pool>/{stratus.db, blobs/}              shared store
+ *   root/tenants/<tenant>/self/{falda.db, blobs/}     private store
+ *   root/pools/<pool>/{falda.db, blobs/}              shared store
  *   root/pools.json                                     pool registry
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { Stratus, type Embedder } from "./stratus.js";
+import { Falda, type Embedder } from "./falda.js";
 
 export type Access = "none" | "read" | "readwrite";
 
@@ -61,7 +61,7 @@ export class PoolManager {
   private embed: Embedder;
   private dim: number;
   /** Open store cache keyed by physical store path. */
-  private stores = new Map<string, Stratus>();
+  private stores = new Map<string, Falda>();
   private regPath: string;
 
   constructor(opts: { root: string; embed: Embedder; dim?: number }) {
@@ -154,7 +154,7 @@ export class PoolManager {
    * @param write true if the operation mutates the store.
    * Throws PoolError on missing pool / insufficient access.
    */
-  resolve(tenant: string, pool: string | undefined, write: boolean): Stratus {
+  resolve(tenant: string, pool: string | undefined, write: boolean): Falda {
     this.vTenant(tenant);
     const p = pool ?? "self";
     if (p === "self") return this.storeAt(this.selfStorePath(tenant));
@@ -171,20 +171,20 @@ export class PoolManager {
   // ─── physical store paths ────────────────────────────────────────────────────
   private selfStorePath(tenant: string) {
     const dir = path.join(this.root, "tenants", tenant, "self");
-    return { dir, db: path.join(dir, "stratus.db"), blobs: path.join(dir, "blobs") };
+    return { dir, db: path.join(dir, "falda.db"), blobs: path.join(dir, "blobs") };
   }
   private poolStorePath(pool: string) {
     const dir = path.join(this.root, "pools", pool);
-    return { dir, db: path.join(dir, "stratus.db"), blobs: path.join(dir, "blobs") };
+    return { dir, db: path.join(dir, "falda.db"), blobs: path.join(dir, "blobs") };
   }
 
-  /** Open (or reuse) the Stratus store at a physical location. */
-  private storeAt(loc: { dir: string; db: string; blobs: string }): Stratus {
+  /** Open (or reuse) the Falda store at a physical location. */
+  private storeAt(loc: { dir: string; db: string; blobs: string }): Falda {
     const key = loc.db;
     let s = this.stores.get(key);
     if (!s) {
       fs.mkdirSync(loc.dir, { recursive: true });
-      s = new Stratus({ dbPath: loc.db, blobDir: loc.blobs, embed: this.embed, dim: this.dim });
+      s = new Falda({ dbPath: loc.db, blobDir: loc.blobs, embed: this.embed, dim: this.dim });
       this.stores.set(key, s);
     }
     return s;

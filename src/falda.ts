@@ -1,5 +1,5 @@
 /**
- * STRATUS core store — clustered hierarchical memory for scientific agents.
+ * FALDA core store — clustered hierarchical memory for scientific agents.
  *
  * Four tiers, layered like atmospheric strata:
  *   T0  Stream    — raw conversation / observation log
@@ -22,7 +22,7 @@ import * as path from "node:path";
 
 export type Embedder = (text: string) => Promise<number[]>;
 
-export interface StratusOptions {
+export interface FaldaOptions {
   /** SQLite file path (':memory:' for ephemeral). */
   dbPath: string;
   /** Directory for scene (T2) + core (T3) blob files. */
@@ -59,16 +59,16 @@ function toFtsQuery(raw: string): string {
     .map((t) => `"${t.replace(/"/g, '""')}"`);
   // Empty input -> a quoted literal that is valid FTS5 syntax but won't match
   // real tokens, yielding zero rows instead of a parse error.
-  return tokens.length ? tokens.join(" ") : '"__stratus_no_match__"';
+  return tokens.length ? tokens.join(" ") : '"__falda_no_match__"';
 }
 
-export class Stratus {
+export class Falda {
   private db: Database.Database;
   private embed: Embedder;
   private blobDir: string;
   private dim: number;
 
-  constructor(opts: StratusOptions) {
+  constructor(opts: FaldaOptions) {
     this.embed = opts.embed;
     this.blobDir = opts.blobDir;
     this.dim = opts.dim ?? 768;

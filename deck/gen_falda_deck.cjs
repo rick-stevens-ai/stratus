@@ -1,4 +1,4 @@
-// STRATUS deck generator — open, US-origin hierarchical agent-memory store.
+// FALDA deck generator — open, US-origin hierarchical agent-memory store.
 // Reuses the shared deck_lib (palette, fonts, >=16pt rule, diagram primitives).
 // HARD RULE: no fontSize below 16 anywhere.
 const path = require("path");
@@ -17,7 +17,7 @@ const slide = () => { N++; return pptx.addSlide(); };
 (() => {
   const s = slide(); L.bgDark(s);
   s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.333, h: 0.18, fill: { color: C.CYAN }, line: { type: "none" } });
-  s.addText("STRATUS", { x: 0.7, y: 2.2, w: 12, h: 1.4, fontFace: HF, fontSize: 76, bold: true, color: C.WHITE, charSpacing: 4 });
+  s.addText("FALDA", { x: 0.7, y: 2.2, w: 12, h: 1.4, fontFace: HF, fontSize: 76, bold: true, color: C.WHITE, charSpacing: 4 });
   s.addText("Clustered hierarchical memory for scientific agents", { x: 0.72, y: 3.6, w: 12, h: 0.7, fontFace: BF, fontSize: 26, color: C.ICE });
   s.addText("Open components · self-hosted · built to scale from one agent to thousands",
     { x: 0.72, y: 4.35, w: 12, h: 0.6, fontFace: BF, fontSize: 18, color: C.CYAN });
@@ -29,7 +29,7 @@ const slide = () => { N++; return pptx.addSlide(); };
   const s = slide(); L.bgLight(s);
   L.kicker(s, "Overview", C.TEAL);
   L.title(s, "A memory store shaped like memory");
-  s.addText("Agents need more than a chat log. STRATUS layers memory into four strata — from raw observation to long-lived persona — so recall returns the right grain of context for the question.",
+  s.addText("Agents need more than a chat log. FALDA layers memory into four strata — from raw observation to long-lived persona — so recall returns the right grain of context for the question.",
     { x: 0.7, y: 1.95, w: 12, h: 0.9, fontFace: BF, fontSize: 18, color: "33414F", lineSpacingMultiple: 1.15 });
   const y = 3.05, w = 2.86, h = 2.9, gap = 0.18;
   const cards = [
@@ -90,10 +90,10 @@ const slide = () => { N++; return pptx.addSlide(); };
   const s = slide(); L.bgLight(s);
   L.kicker(s, "Today", C.TEAL);
   L.title(s, "One process, one box, 1–50 agents");
-  s.addText("`stratus serve` embeds an entire store in a single Node process over one SQLite database. Install, smoke-test, and a live gateway in under a minute — the right shape for a workstation or a single VM.",
+  s.addText("`falda serve` embeds an entire store in a single Node process over one SQLite database. Install, smoke-test, and a live gateway in under a minute — the right shape for a workstation or a single VM.",
     { x: 0.7, y: 1.95, w: 12, h: 0.9, fontFace: BF, fontSize: 18, color: "33414F", lineSpacingMultiple: 1.15 });
   L.card(s, 0.7, 3.1, 3.9, 2.3, "Install", "./install.sh\n— checks Node ≥ 20\n— builds + smoke-tests\n— links the CLI", { accent: C.CYAN, bsize: 16 });
-  L.card(s, 4.75, 3.1, 3.9, 2.3, "Run", "stratus serve\nstratus health\nstratus smoke\n\nOffline by default.", { accent: C.TEAL, bsize: 16 });
+  L.card(s, 4.75, 3.1, 3.9, 2.3, "Run", "falda serve\nfalda health\nfalda smoke\n\nOffline by default.", { accent: C.TEAL, bsize: 16 });
   L.card(s, 8.8, 3.1, 3.85, 2.3, "Use", "POST /stream/add\nPOST /atoms/upsert\nPOST /*/search\nPOST /core/read|write", { accent: C.GOLD, bsize: 16 });
   L.foot(s, N, TOTAL, false);
 })();
@@ -243,9 +243,9 @@ hwSlide("Hardware · Tier C", "Lab-wide — ~10,000 agents", "Binding constraint
   s.addText("One agent to thousands — four moves, one open stack", { x: 0.7, y: 2.4, w: 12, h: 1.4, fontFace: HF, fontSize: 38, bold: true, color: C.WHITE, lineSpacingMultiple: 1.05 });
   s.addText("Store pool + sharding · stateless gateway fleet · batched embedding tier · async pipeline workers.\nDominated by embedding GPUs and fast NVMe — gateway CPU is the cheap part. Three-copy durability throughout.",
     { x: 0.72, y: 4.0, w: 12, h: 1.4, fontFace: BF, fontSize: 19, color: C.ICE, lineSpacingMultiple: 1.2 });
-  L.pill(s, 0.72, 5.7, 5.4, 0.55, "STRATUS · open · self-hosted · Apache-2.0", C.TEAL);
+  L.pill(s, 0.72, 5.7, 5.4, 0.55, "FALDA · open · self-hosted · Apache-2.0", C.TEAL);
 })();
 
-const OUT = path.join("/Users/stevens/code/stratus/deck", "STRATUS.pptx");
+const OUT = path.join("/Users/stevens/code/falda/deck", "FALDA.pptx");
 require("fs").mkdirSync(path.dirname(OUT), { recursive: true });
 pptx.writeFile({ fileName: OUT }).then(() => console.log("WROTE " + OUT + " (" + N + " slides)"));
